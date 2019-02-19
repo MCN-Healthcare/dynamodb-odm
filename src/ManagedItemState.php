@@ -200,4 +200,9 @@ class ManagedItemState
                 return $a === $b;
         }
     }
+
+    public function isTimestamp($item)
+    {
+
+    }
 }

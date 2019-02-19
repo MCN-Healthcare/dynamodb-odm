@@ -2,14 +2,25 @@
     "name"        : "oasis/dynamodb-odm",
     "description" : "ODM for dynamodb",
     "type"        : "library",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/dboerger/DynamoDB-php-event"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/dboerger/DynamoDB-aws-wrappers"
+        }
+    ],
     "require"     : {
-        "php"                 : "^7.1.3",
-        "doctrine/annotations": "^1.4",
-        "oasis/aws-wrappers"  : "^2.10",
-        "oasis/logging"       : "^1.0",
-        "doctrine/common"     : "^2.7",
-        "symfony/console"     : "^4.2",
-        "symfony/finder"      : "^4.2"
+        "php"                   : "^7.1.3",
+        "doctrine/annotations"  : "^1.4",
+        "oasis/aws-wrappers"    : "dev-Timestampable",
+        "oasis/logging"         : "^1.0",
+        "doctrine/common"       : "^2.7",
+        "symfony/console"       : "^4.2",
+        "symfony/finder"        : "^4.2",
+        "doctrine/event-manager": "^1.0"
     },
     "require-dev" : {
         "phpunit/phpunit": "^5.7"
