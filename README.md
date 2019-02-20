@@ -120,6 +120,14 @@ class User
      * @Field(type="string")
      */
     protected $name;
+    
+    /**
+    * Last updated is set to unix timestamp on every update
+    * 
+    * @var int
+    * @Field(type="int", cas="timestamp") 
+    */
+    protected $lastUpdated;
 }
 
 ```
@@ -213,6 +221,22 @@ The value of the "cas" property can be one of the following:
 - _enabled_: the old value of this field will be checked when updating the item. When inserting an item, this field must either posses a NULL value, or be absent.
 - _timestamp_: this is a special type of enabled cas property. Every time an item is updated/inserted, the value of this field will automatically be set to the current timestamp.
 
+Below is an example of using the timestamp to update after every create/update:
+
+```php
+<?php
+
+class User
+{
+    // ...
+    /**
+     * @var int
+     * @Field(type="int", cas="timestamp")
+     */
+    protected $lastUpdated;
+}
+```
+
 > **NOTE**: Check-and-set validation is done only when you call `ItemManger#flush()`. Failure to meet the check and set condition(s) will lead to an `Oasis\Mlib\ODM\Dynamodb\Exceptions\DataConsistencyException` being thrown.
 
 ## Working with Objects
@@ -222,6 +246,7 @@ All objects (items) in ODM are managed. Operations on objects are managed like o
 The ItemManager can be manually cleared by calling `ItemManager#clear()`. However, any changes that are not committed yet will be lost.
 
 > **NOTE**: it is very **important** to understand, that only `ItemManager#flush()` will cause write operations against the database. Any other methods such as `ItemManager#persist($item)` or `ItemManager#remove($item)` only notify the ItemManager to perform these operations during flush. Not calling `ItemManager#flush()` will lead to all changes during that request being lost.
+
 
 #### Persisting Item
 
