@@ -59,7 +59,12 @@ class ItemReflection
      * Reserved attribute names will be cleared when hydrating an object
      */
     protected $reservedAttributeNames;
-    
+    /**
+     * @var array
+     * Activity Logging property, in the format of entity name => true/false
+     */
+    private $activityLoggingProperties;
+
     public function __construct($itemClass, $reservedAttributeNames)
     {
         $this->itemClass              = $itemClass;
@@ -356,5 +361,10 @@ class ItemReflection
     public function getTableName()
     {
         return $this->itemDefinition->table;
+    }
+
+    public function getActivityLoggingProperties()
+    {
+        return $this->activityLoggingProperties;
     }
 }

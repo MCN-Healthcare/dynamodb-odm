@@ -266,5 +266,31 @@ class ItemManager
     {
         $this->reservedAttributeNames = $reservedAttributeNames;
     }
-    
+
+    /**
+     * Check Loggable
+     *
+     * Check if the entity being passed has the annotation for Activity Logging as is enabled
+     *
+     * @see https://www.doctrine-project.org/projects/doctrine-annotations/en/1.6/custom.html
+     *
+     * @param $entity
+     * @return bool
+     * @throws \Doctrine\Common\Annotations\AnnotationException
+     * @throws \ReflectionException
+     */
+    public function checkLoggable($entity)
+    {
+        $refClass = new \ReflectionClass($entity);
+        $reader = new AnnotationReader();
+
+        $classAnnotations =  $reader->getClassAnnotations($refClass);
+
+        foreach ($classAnnotations as $annot) {
+            if ($annot instanceof \Oasis\Mlib\ODM\Dynamodb\Annotations\ActivityLogging) {
+                return $annot->enable;
+            }
+        }
+        return false;
+    }
 }
