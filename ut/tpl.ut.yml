@@ -1,4 +1,23 @@
 prefix: odm-ut-
+#dynamodb:
+#    region: cn-north-1
+#    profile: beijing-minhao
+
+parameters:
+    aws.region: us-west-2
+    aws.api_version: latest
+
 dynamodb:
-    region: cn-north-1
-    profile: beijing-minhao
+    # Dynamo DB
+    Oasis\Mlib\ODM\Dynamodb\ItemManager:
+        public: true
+        arguments:
+            $dynamodbConfig: {region: '%aws.region%', version: '%aws.api_version%', endpoint: 'http://dynamodb:8000'}
+            $defaultTablePrefix: ''
+            $cacheDir: '%kernel.cache_dir%/dynamodb'
+            $isDev: true
+        calls:
+            - method: addNamespace
+              arguments:
+                  - 'App\Entity'
+                  - '%kernel.project_dir%/App/Entity'

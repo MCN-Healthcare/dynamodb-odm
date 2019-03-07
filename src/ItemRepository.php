@@ -18,8 +18,13 @@ class ItemRepository
 {
     /** @var  ItemManager */
     protected $itemManager;
+
     /** @var ItemReflection */
     protected $itemReflection;
+
+    /** @var ActivityLoggingDetails */
+    private $LoggingDetails;
+
     /** @var  DynamoDbTable */
     protected $dynamodbTable;
     
@@ -28,18 +33,20 @@ class ItemRepository
      * Maps object id to managed object
      */
     protected $itemManaged = [];
-    /**
-     * @var string
-     */
-    private $logTable;
+
+    /** @var string */
+    private $loggedTable;
+
+    /** @var string */
+    private $changedBy;
 
     /**
      * ItemRepository constructor.
      * @param ItemReflection $itemReflection
      * @param ItemManager $itemManager
-     * @param string $logTable
+     * @param ActivityLoggingDetails $LoggingDetails
      */
-    public function __construct(ItemReflection $itemReflection, ItemManager $itemManager, string $logTable = "activityLog")
+    public function __construct(ItemReflection $itemReflection, ItemManager $itemManager, ActivityLoggingDetails $LoggingDetails)
     {
         $this->itemManager    = $itemManager;
         $this->itemReflection = $itemReflection;
@@ -51,7 +58,9 @@ class ItemRepository
             $tableName,
             $this->itemReflection->getAttributeTypes()
         );
-        $this->logTable = $logTable;
+        $this->loggedTable = $LoggingDetails->getLoggedTable();
+        $this->changedBy = $LoggingDetails->getChangedBy();
+        $this->LoggingDetails = $LoggingDetails;
     }
 
     /**
@@ -141,7 +150,10 @@ class ItemRepository
 
             // Activity Log - Check if the activity on the entity should be logged, and if so, write it to the logging table!
             if ($this->itemManager->checkLoggable($this->itemReflection->getItemClass())) {
-                $this->logActivity($item, $this->logTable);
+                // Check that the Logged Table AND Changed By is not null
+                if (!is_null($this->loggedTable) && !is_null($this->changedBy)) {
+                    $this->logActivity($item, $this->LoggingDetails->getOffset());
+                }
             }
 
             // Delete
@@ -857,15 +869,15 @@ class ItemRepository
      * Logs the activity of a specific table and places that into another logging table
      *
      * @param $dataObj
-     * @param $logTable
+     * @param int $offset
      * @throws \Doctrine\Common\Annotations\AnnotationException
      * @throws \ReflectionException
      */
-    public function logActivity($dataObj, string $logTable)
+    public function logActivity($dataObj, int $offset = 0)
     {
-        $log = new ActivityLogging($this->itemReflection, $this->itemManager , $logTable);
+        $log = new ActivityLogging($this->itemReflection, $this->itemManager, $this->changedBy, $this->loggedTable, $offset);
 
-        $log->insertIntoActivityLog($dataObj, $logTable);
+        $log->insertIntoActivityLog($dataObj);
 
     }
 

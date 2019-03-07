@@ -9,9 +9,12 @@
 namespace Oasis\Mlib\ODM\Dynamodb\Ut;
 
 use Oasis\Mlib\AwsWrappers\DynamoDbIndex;
+use Oasis\Mlib\ODM\Dynamodb\Entity\ActivityLog;
 use Oasis\Mlib\ODM\Dynamodb\Exceptions\DataConsistencyException;
 use Oasis\Mlib\ODM\Dynamodb\Exceptions\ODMException;
 use Oasis\Mlib\ODM\Dynamodb\ItemManager;
+use Oasis\Mlib\ODM\Dynamodb\ActivityLogging;
+use Oasis\Mlib\ODM\Dynamodb\ItemReflection;
 
 class ItemManagerTest extends \PHPUnit_Framework_TestCase
 {
@@ -19,7 +22,13 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
     protected $itemManager;
     /** @var  ItemManager */
     protected $itemManager2;
-    
+
+    /** @var ItemReflection */
+    protected $itemReflector;
+
+    /** @var ActivityLogging */
+    private $activityLogging;
+
     protected function setUp()
     {
         parent::setUp();
@@ -29,6 +38,16 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         $this->itemManager2 = new ItemManager(
             UTConfig::$dynamodbConfig, UTConfig::$tablePrefix, __DIR__ . "/cache", true
         );
+
+        $this->itemReflector = new ItemReflection(User::class, null);
+
+        $this->activityLogging = new ActivityLogging(
+            $this->itemReflector,
+            $this->itemManager,
+            'test-changer',
+            User::class,
+            0
+        );
     }
     
     public function testPersistAndGet()
@@ -37,11 +56,13 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         $user = new User();
         $user->setId($id);
         $user->setName('Alice');
+        //print_r($user);
         $this->itemManager->persist($user);
         $this->itemManager->flush();
         
         /** @var User $user2 */
         $user2 = $this->itemManager->get(User::class, ['id' => $id]);
+        print_r($user2);
         
         $this->assertEquals($user, $user2); // user object will be reused when same primary keys are used
         $this->assertEquals('Alice', $user2->getName());
@@ -73,11 +94,12 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         
         $this->assertNull($user3);
     }
-    
+
     /**
      * @depends testPersistAndGet
      *
      * @param $id
+     * @return mixed
      */
     public function testEdit($id)
     {
@@ -119,11 +141,12 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         self::expectException(DataConsistencyException::class);
         $this->itemManager2->flush();
     }
-    
+
     /**
      * @depends testEdit
      *
      * @param $id
+     * @return
      */
     public function testCASTimestamp($id)
     {
@@ -224,11 +247,12 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         $this->itemManager->flush();
         $this->itemManager->flush();
     }
-    
+
     /**
      * @depends testCASTimestamp
      *
      * @param $id
+     * @return
      */
     public function testRefresh($id)
     {
@@ -308,11 +332,12 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         $this->expectException(ODMException::class);
         $this->itemManager->refresh($user);
     }
-    
+
     /**
      * @depends testRefresh
      *
      * @param $id
+     * @return
      */
     public function testDetach($id)
     {
@@ -619,5 +644,44 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         $basicInfo->setFamily('helll');
         $this->expectException(ODMException::class);
         $this->itemManager->flush();
+    }
+
+    /**
+     * @return void
+     */
+    public function testLoggableIsEnabledOnUser()
+    {
+
+        $id   = mt_rand(1000, PHP_INT_MAX);
+        $user = new User();
+        $user->setId($id);
+        $user->setName('Billy Bo Bob Brain');
+        $this->itemManager->persist($user);
+        $this->itemManager->flush();
+
+        $this->itemReflector = $this->itemManager->getItemReflection(
+            $this->itemManager->getTableName(
+                $this->itemManager->getRepository(
+                    $this->itemManager->getReader($user)
+                )
+            )
+        );
+
+        /** @var User $user2 */
+        $user2 = $this->itemManager->get(User::class, ['id' => $id]);
+
+        $this->assertEquals($user, $user2); // user object will be reused when same primary keys are used
+        $this->assertEquals('Alice', $user2->getName());
+
+        $changedBy = "SomeUserChangingStuff";
+        $loggedTable = $this->itemReflector->getTableName();
+        $offset = 0;
+
+        $activityLogging = new ActivityLogging($this->itemReflector, $this->itemManager, $changedBy, $loggedTable, $offset);
+
+
+        $this->assertTrue(!is_null($this->itemManager->get(User::class, ['id' => $id])));
+        $this->assertTrue(!is_null($this->itemManager->get(ActivityLog::class, ['changedBy' => $changedBy])));
+
     }
 }

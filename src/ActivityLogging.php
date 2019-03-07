@@ -8,12 +8,10 @@
  * 1) Get current Item Repository
  * 2) Get previous value that's being updated
  * 3) Get who is updating the value
- * 4) Insert previous value into log table
+ * 4) Insert previous value, current value, updated by and timestamp into log table
  */
 
 namespace Oasis\Mlib\ODM\Dynamodb;
-
-use Oasis\Mlib\ODM\Dynamodb\Exceptions\ODMException;
 
 class ActivityLogging
 {
@@ -29,31 +27,53 @@ class ActivityLogging
     /**
      * @var string
      */
-    private $logTable;
+    private $loggedTable;
+    /**
+     * @var mixed
+     */
+    private $changedBy;
+    /**
+     * @var int
+     */
+    private $offset;
 
     /**
      * ActivityLogging constructor.
      * @param ItemReflection $itemReflection
      * @param ItemManager $itemManager
-     * @param string $logTable
+     * @param $changedBy - The user that is making the changes to the database being logged
+     * @param string $loggedTable - The table that is being logged
+     * @param int $offset - the offset from UTC in seconds
      */
     public function __construct(ItemReflection $itemReflection,
                                 ItemManager $itemManager,
-                                string $logTable = "activityLog"
+                                $changedBy = 'UnknownUser',
+                                string $loggedTable = "",
+                                int $offset = 0
     )
     {
-        $this->itemReflection = $itemReflection;
-        $this->itemManager = $itemManager;
-        $this->logTable = $logTable;
+        $this->itemReflection   = $itemReflection;
+        $this->itemManager      = $itemManager;
+        $this->loggedTable      = $loggedTable;
+        $this->changedBy        = $changedBy;
+        $this->offset           = $offset;
     }
 
     /**
-     * @param string $logTable
      * @return \Oasis\Mlib\ODM\Dynamodb\ItemRepository
      */
-    private function getItemRepository(string $logTable = "activityLog"): ItemRepository
+    private function getItemRepository(): ItemRepository
     {
-        return new ItemRepository($this->itemReflection, $this->itemManager, $logTable);
+        $activityLoggingDetails = new ActivityLoggingDetails(
+            $this->changedBy,
+            $this->loggedTable,
+            $this->offset
+        );
+
+        return new ItemRepository($this->itemReflection,
+            $this->itemManager,
+            $activityLoggingDetails
+        );
     }
 
     /**
@@ -72,17 +92,15 @@ class ActivityLogging
     /**
      * Insert into the activity log table the previous values
      *
-     * @param $dataObj
-     * @param string $logTable
-     * @param int $offset
+     * @param $dataObj          - The Data Object that is being updated
      * @return bool
      * @throws \Doctrine\Common\Annotations\AnnotationException
      * @throws \ReflectionException
      */
-    public function insertIntoActivityLog($dataObj, string $logTable = "activityLog", int $offset = 0)
+    public function insertIntoActivityLog($dataObj)
     {
         // get the item repository
-        $repo = $this->getItemRepository($logTable);
+        $repo = $this->getItemRepository();
 
         // get the primary key of the table being created/updated/deleted
         $primaryKey = $this->itemReflection->getPrimaryKeys($dataObj);
@@ -91,20 +109,17 @@ class ActivityLogging
         $previousObject = $repo->get($primaryKey);
 
         // set the timestamp
-        $now = time() + $offset;
+        $now = time() + $this->offset;
 
-        // merge the current object and the previous object
-        $logObject = (object) array_merge(
-            [
-                'ActivityLogTimestamp' => $now
-                /*, 'UpdatedBy' => $user*/
-            ],
-            (
-                array_merge(
-                    (array) $dataObj,
-                    (array) $previousObject)
-            )
-        );
+        // create the log object to be inserted into the table after casting the previous objects as arrays
+        $logObject = (object) [
+                'loggedTable'       => $this->loggedTable,
+                'changedBy'         => $this->changedBy,
+                'changedDateTime'   => $now,
+                'previousValue'     => (array) $dataObj,
+                'changedToValue'    => (array) $previousObject,
+            ];
+
         // write the object to the activity log table
         $repo->persist($logObject);
         $repo->flush();

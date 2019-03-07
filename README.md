@@ -4,6 +4,7 @@ The oasis/dynamodb-odm is an ODM (object data mapping) library for easy use of A
 
 > **NOTE**: this document assumes you have some understanding of what DynamoDB is and the difference between DynamoDB and traditional RDBMS (e.g. MySQL). Some terms and ideas discussed in this document are DynamoDB specific and will not be explained in this documentation. To study DynamoDB, please refer to the [official dev guide](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide)
 
+
 ## Installation &amp; Configuration
 
 To get oasis/dynamodb-odm, you can simple require it via `composer`:
@@ -12,6 +13,7 @@ To get oasis/dynamodb-odm, you can simple require it via `composer`:
 $ composer require oasis/dynamodb-odm
 ```
 
+##
 ### Class Loading
 
 Autoloading for DynamoDb ODM is taken care of by `composer`. You just need to include the composer autoload file in your project:
@@ -22,6 +24,7 @@ Autoloading for DynamoDb ODM is taken care of by `composer`. You just need to in
 require_once "vendor/autoload.php";
 ```
 
+##
 ### Obtaining an ItemManager
 
 Once you have prepared the class loading, you acquire an **ItemManager** instance. The ItemManager class is the primary access point to ODM functionality provided by the library.
@@ -66,6 +69,7 @@ itemNamespace   | the base namespace for the managed Item classes source directo
 
 > **NOTE**: an Item class defines a type of item managed by ODM. Some typical examples are: User, Order, GameRoom, and Card
 
+##
 ### Setting Up Command Line Tool
 
 DynamoDb ODM ships with a number of command line tools that are very helpful during development. You can call this command from the Composer binary directory:
@@ -92,6 +96,7 @@ return new ConsoleHelper($itemManager);
 
 Detailed usage can be found in later [section](#using-the-command-line-tool)
 
+##
 ## Mapping
 
 The fundamental functionality of an ODM library is to map object models (i.e. classes) to database sctructure. DynamoDb ODM provides a handy way to establish this mapping with the help of annotations:
@@ -134,6 +139,7 @@ class User
 
 The class above declares a simple User model, wich will be mapped to DynamoDb table "users" (possibly with a prefix). The annotations are explained below:
 
+##
 #### Item
 
 Every PHP object that you want to save to database using ODM is referred to as an "Item". To describe an object as an item, we have to describe the class of this object.
@@ -147,6 +153,7 @@ Class annotated with the _@Item_ annotation will be managed by ItemManager. An I
 - **repository**: the repository class name; by default, `\Oasis\Mlib\ODM\Dynamodb\ItemRepository` is used
 - **projected**: whether this item is projected only. _Projected Item_ is not updatable (remove action is allowed). And when reading (i.e. get/query/scan) a projected item, only attrbutes for this item will be fetched from DynamoDB.
 
+##
 #### Field
 
 The next step after making a PHP class an Item is mapping its properties to attributes in DynamoDb.
@@ -162,7 +169,38 @@ We use _@Field_ annotation to describe class properties which are DynamoDb attri
     - list
     - map
 - **name**: the name of the DynamoDb attribute, if it's not the same as the property name. This value defaults to `null`, meaning the attribute key is the same as the property name.
+##
+#### Loggable
 
+When wanting to log changes on a table, use the @ActivityLogging annotation on the entity class with a boolean value.
+```php
+<?php
+
+/**
+ * @ActivityLogging(enable="true")
+ */
+class myEntity
+{
+    //... entity details
+}
+```
+
+- ***changedBy***: who is performing the change on the table
+- ***loggedTable***: the table that is being changed
+- ***offset***: the date/time offset from UTC in seconds
+
+***Warning***
+Do not add this value to the table that you are logging to, it will cause a circular failure! 
+
+Set the Activity Logging Details method:
+```php
+<?php 
+
+$ald = new ActivityLoggingDetails($changedBy, $loggedTable, $offset);
+
+```
+
+##
 #### Partitioned Hash Key
 
 A partitioned hash key is an extension to fields used as hash key in queries. There are circumstances that you only want to query on a single value (or very few values) for that field. The nature of DynamoDB will only utilize a fraction of the read capacity assigned, and therefore limit your system performance. However, by using a partitioned hash key for that field, each value of the originial field will have a group of mapped values in the partitioned hash key field. By querying those partitioned values parallelly (see [Multi Query](#by-using-multi-query-on-partitioned-hash-key)), your query performace should be significantly improved in this use case.
@@ -173,6 +211,7 @@ We use _@PartitionedHashKey_ annotation to describe the partitioned hash key fie
 - **hashField**: the field whose value is used as a hashing source, always use a well distributed field as hash field (e.g. unqiue ID for the item) 
 - **size**: size of partition, default to 16
 
+##
 #### Index
 
 When declaring different indexes, we can use the _@Index_ annotation to make the docblock more readable. An _@Index_ is composited with two keys:
@@ -210,6 +249,7 @@ class User
 }
 ```
 
+##
 #### Check and Set
 
 A field and be declared as a check-and-set field, using the "cas" attribute of the _@Field_ annotation.
@@ -247,7 +287,7 @@ The ItemManager can be manually cleared by calling `ItemManager#clear()`. Howeve
 
 > **NOTE**: it is very **important** to understand, that only `ItemManager#flush()` will cause write operations against the database. Any other methods such as `ItemManager#persist($item)` or `ItemManager#remove($item)` only notify the ItemManager to perform these operations during flush. Not calling `ItemManager#flush()` will lead to all changes during that request being lost.
 
-
+##
 #### Persisting Item
 
 An item can be made persistent by passing it to the `ItemManager#persist($item)` method. By applying the persist operation on some item, that item becomes **MANAGED**, which means that its persistence is from now on managed by an ItemManager. As a result the persistent state of such an item will subsequently be properly synchronized with the database when `ItemManager#flush()` is invoked.
@@ -264,6 +304,7 @@ $im->flush();
 
 ```
 
+##
 #### Removing Item
 
 An item can be removed from persistent storage by passing it to the `ItemManager#remove($item)` method. By applying the remove operation on some item, that item becomes **REMOVED**, which means that its persistent state will be deleted once `ItemManager#flush()` is invoked.
@@ -279,6 +320,7 @@ $im->flush();
 
 ```
 
+##
 #### Detaching Item
 
 An item is detached from an ItemManager and thus no longer managed by invoking the `ItemManager#detach($item)` method on it. Changes made to the detached item, if any (including removal of the item), will not be synchronized to the database after the item has been detached.
@@ -298,6 +340,7 @@ $im->flush(); // changes to $user will not be synchronized
 
 ```
 
+##
 #### Synchronization with the Database
 
 The state of persistent items is synchronized with the database on `flush()` of an ItemManager. The synchronization involves writing any updates to persistent items to the database. When `ItemManager#flush()` is called, ODM inspects all managed, new and removed items and will perform the following operations:
@@ -310,6 +353,7 @@ The state of persistent items is synchronized with the database on `flush()` of 
 
 DynamoDb ODM provides the following ways, in increasing level of power and flexibility, to fetch persistent object(s). You should always start with the simplest one that suits your needs.
 
+##
 #### By Primary Index
 
 The most basic way to fetch a persistent object is by its primary index using the `ItemManager#get($itemClass, $primayKeys)` method. Here is an example:
@@ -333,6 +377,7 @@ $user = $userRepo->get(["id" => 1]);
 
 ```
 
+##
 #### By Simple Conditions on Queriable Index
 
 To query for one or more items based on simple conditions, use the `ItemManager#query()` and `ItemManager#queryAndRun()` methods on a repository as follows:
@@ -355,6 +400,7 @@ $users = $userRepo->query(
 
 > **NOTE**: a simple condition is a condition that uses one and only one index. If the used index contains both _hash key_ and _range key_, the _range key_ may only be used when _hash key_ is also presented in the condition. Furthermore, only equal test operation can be performed against the _hash key_.
 
+##
 #### By Using Multi Query on Partitioned Hash Key
 
 To query for one or more items based on a PartitionedHashKey, use `ItemManager#multiQueryAndRun()` methods on a repository as follows:
@@ -379,6 +425,7 @@ $users = $userRepo->multiQueryAndRun(
 
 ```
 
+##
 #### By Filters on Non-Queriable Index
 
 To query for one or more items which has no associated index, use the `ItemManager#scan()` and `ItemManager#scanAndRun()` methods on a repository as follows:
@@ -403,6 +450,7 @@ $users = $userRepo->scan(
 
 DynamoDb ODM ships an executable tool together with the library. After installation, there are following built-commands which helps you manage the database schema for the items:
 
+##
 #### Create
 
 ```bash
@@ -415,6 +463,7 @@ The create command will iterate all managed items and create tables correspondin
 
 > **NOTE**: if you would like to skip creating existing table (i.e. only create non-existing tables), you can use the "--skip-existing-table" option
 
+##
 #### Update
 
 ```bash
@@ -427,6 +476,7 @@ The update command is actually a more powerful (and slower too) version of creat
 
 > **NOTE**: if you would like to only see the changes to database schemas without perfoming actual update, you can specify the "--dry-run" option in command line. The program will only prompts possible changes withou actually performing them.
 
+##
 #### Drop
 
 ```bash

@@ -13,6 +13,7 @@ use Doctrine\Common\Annotations\AnnotationRegistry;
 use Doctrine\Common\Annotations\CachedReader;
 use Doctrine\Common\Cache\FilesystemCache;
 use Oasis\Mlib\ODM\Dynamodb\Exceptions\ODMException;
+use Oasis\Mlib\ODM\Dynamodb\Ut\UTConfig;
 use Symfony\Component\Finder\Finder;
 
 class ItemManager
@@ -235,12 +236,16 @@ class ItemManager
      */
     public function getRepository($itemClass)
     {
+        //var_dump($this->repositories[$itemClass]);
+        //print_r($itemClass);
         if (!isset($this->repositories[$itemClass])) {
             $reflection                     = $this->getItemReflection($itemClass);
             $repoClass                      = $reflection->getRepositoryClass();
+            $activityLoggingDetails         = new ActivityLoggingDetails();
             $repo                           = new $repoClass(
                 $reflection,
-                $this
+                $this,
+                $activityLoggingDetails
             );
             $this->repositories[$itemClass] = $repo;
         }
@@ -270,7 +275,7 @@ class ItemManager
     /**
      * Check Loggable
      *
-     * Check if the entity being passed has the annotation for Activity Logging as is enabled
+     * Check if the entity being passed has the annotation for Activity Logging and is enabled
      *
      * @see https://www.doctrine-project.org/projects/doctrine-annotations/en/1.6/custom.html
      *
@@ -287,7 +292,7 @@ class ItemManager
         $classAnnotations =  $reader->getClassAnnotations($refClass);
 
         foreach ($classAnnotations as $annot) {
-            if ($annot instanceof \Oasis\Mlib\ODM\Dynamodb\Annotations\ActivityLogging) {
+            if ($annot instanceof ActivityLogging) {
                 return $annot->enable;
             }
         }
