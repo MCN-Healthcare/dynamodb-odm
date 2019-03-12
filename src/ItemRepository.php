@@ -482,12 +482,14 @@ class ItemRepository
      */
     public function persist($obj)
     {
+        /*
         var_dump("\033[0;32m Persist Object\033[0m: ".print_r($obj, true)."\r");
         var_dump("\033[0;36m Get Reflection Class\033[0m: ".print_r($this->itemReflection->getReflectionClass(), true)."\r");
         var_dump("\033[0;31m Is Instance of Object\033[0m: ".print_r($this->itemReflection->getReflectionClass()->isInstance($obj), true)."\r");
 
         var_dump("\033[0;36m Get Reflection Class Name\033[0m: ".$this->itemReflection->getReflectionClass()->getName()."\r");
         var_dump("\033[0;36m Get Item Class\033[0m: ".$this->itemReflection->getItemClass()."\r");
+        */
 
         if (!$this->itemReflection->getReflectionClass()->isInstance($obj)) {
             throw new ODMException("Persisting wrong object, expecting: " . $this->itemReflection->getItemClass());//.", received: ".$this->itemReflection->getReflectionClass()->getName());

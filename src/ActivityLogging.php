@@ -141,23 +141,18 @@ class ActivityLogging
         $primaryKey = $this->itemReflection->getPrimaryKeys($dataObj);
 
         // get the previous objects values based on the primary key
-        $previousObject = $repo->get($primaryKey);
+        $previousObject = $repo->get($primaryKey) ?: [];
 
         // set the timestamp
         $now = time() + $this->offset;
 
-        //$itemReflection2  = new ItemReflection($this->itemManager->getItemReflection($this->getItemRepository()), $this->itemManager->getReservedAttributeNames());
-        //$itemClass = $this->itemReflection2->getItemClass();
-        //var_dump(__METHOD__."\033[0;33m Get Item Class:\033[0m: ".print_r($itemClass, true)."\r");
-
         // create the log object to be inserted into the table after casting the previous objects as arrays
-        $logObject = (object) [
-                'loggedTable'       => $this->loggedTable,
-                'changedBy'         => $this->changedBy,
-                'changedDateTime'   => $now,
-                'previousValue'     => (array) $previousObject,
-                'changedToValue'    => (array) $dataObj,
-            ];
+        $logObject = new ActivityLog();
+        $logObject->setLoggedTable($this->loggedTable);
+        $logObject->setChangedBy($this->changedBy);
+        $logObject->setChangedDateTime($now);
+        $logObject->setPreviousValues((array)$previousObject);
+        $logObject->setChangedToValues((array)$dataObj);
 
         var_dump(__METHOD__." \033[0;34m Log Object\033[0m: ".print_r($logObject, true)."\r");
 
