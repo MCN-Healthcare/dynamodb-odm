@@ -6,7 +6,7 @@
  * Time: 11:22
  */
 
-namespace Oasis\Mlib\ODM\Dynamodb\Entity;
+namespace Oasis\Mlib\ODM\Dynamodb\Ut;
 
 use Oasis\Mlib\ODM\Dynamodb\Annotations\Field;
 use Oasis\Mlib\ODM\Dynamodb\Annotations\Index;
@@ -15,7 +15,6 @@ use Oasis\Mlib\ODM\Dynamodb\Annotations\Item;
 /**
  * Class ActivityLog
  *
- * @package Oasis\Mlib\ODM\Dynamodb\Entity
  * @Item(
  *     table="activity-log",
  *     primaryIndex=@Index(hash="id"),
@@ -24,6 +23,7 @@ use Oasis\Mlib\ODM\Dynamodb\Annotations\Item;
  *          {"changedBy", "changedDateTime"}
  *      }
  * )
+ * @package Oasis\Mlib\ODM\Dynamodb\Ut
  */
 class ActivityLog
 {
@@ -34,37 +34,36 @@ class ActivityLog
     protected $id = 0;
 
     /**
-     * @var string
+     * @var
      * @Field(type="string", name="loggedTable")
-     * @ Assert\NotBlank(message="Logged Table cannot be blank.")
      */
     protected $loggedTable;
 
     /**
-     * @var string
+     * @var
      * @Field(type="string", name="changedBy")
-     * @ Assert\NotBlank(message="Changed By cannot be blank.")
      */
     protected $changedBy;
 
     /**
-     * @var int
+     * @var
      * @Field(type="number", name="changedDateTime")
-     * @ Assert\NotBlank(message="Changed Date Time cannot be blank.")
      */
     protected $changedDateTime;
 
     /**
-     * @var array
+     * @var
      * @Field(type="map", name="previousValues")
      */
     protected $previousValues;
 
     /**
-     * @var array
+     * @var
      * @Field(type="map", name="changedToValues")
      */
     protected $changedToValues;
+
+
 
     /**
      * @return string

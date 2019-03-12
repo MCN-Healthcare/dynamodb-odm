@@ -40,6 +40,9 @@ class ItemRepository
     /** @var string */
     private $changedBy;
 
+    /** @var string */
+    private $tableName;
+
     /**
      * ItemRepository constructor.
      * @param ItemReflection $itemReflection
@@ -53,11 +56,15 @@ class ItemRepository
         
         // initialize table
         $tableName           = $itemManager->getDefaultTablePrefix() . $this->itemReflection->getTableName();
+        $this->tableName = $tableName;
+
         $this->dynamodbTable = new DynamoDbTable(
             $itemManager->getDynamodbConfig(),
             $tableName,
             $this->itemReflection->getAttributeTypes()
         );
+
+        $LoggingDetails->setLoggedTable($tableName);
         $this->loggedTable = $LoggingDetails->getLoggedTable();
         $this->changedBy = $LoggingDetails->getChangedBy();
         $this->LoggingDetails = $LoggingDetails;
@@ -148,13 +155,22 @@ class ItemRepository
         foreach ($this->itemManaged as $oid => $managedItemState) {
             $item = $managedItemState->getItem();
 
+            /* */
             // Activity Log - Check if the activity on the entity should be logged, and if so, write it to the logging table!
             if ($this->itemManager->checkLoggable($this->itemReflection->getItemClass())) {
                 // Check that the Logged Table AND Changed By is not null
-                if (!is_null($this->loggedTable) && !is_null($this->changedBy)) {
+                var_dump("\033[0;35m".__METHOD__."\033[0m: Logged Table - ".$this->loggedTable.", Changed By - ".$this->changedBy);
+                //if (!is_null($this->loggedTable) && !is_null($this->changedBy)) {
                     $this->logActivity($item, $this->LoggingDetails->getOffset());
-                }
+                //}
             }
+            /*else {
+                $getItemClass = $this->itemReflection->getItemClass();
+                $checkLoggable = $this->itemManager->checkLoggable($this->itemReflection->getItemClass());
+
+                var_dump("\033[0;36m".__METHOD__."\033[0m: Check Loggable: ".($checkLoggable ? "True" : "False")."\r");
+                var_dump("\033[0;36m".__METHOD__."\033[0m: Class '".$getItemClass."' is not set to 'ActivityLoggable'\r");
+            }*/
 
             // Delete
             if ($managedItemState->isRemoved()) {
@@ -228,6 +244,23 @@ class ItemRepository
                     }
                 }
             }
+
+            /*
+            $getItemClass = $this->itemReflection->getItemClass();
+            $checkLoggable = $this->itemManager->checkLoggable($this->itemReflection->getItemClass());
+
+            // Activity Log - Check if the activity on the entity should be logged, and if so, write it to the logging table!
+            if ($this->itemManager->checkLoggable($this->itemReflection->getItemClass())) {
+                // Check that the Logged Table AND Changed By is not null
+                var_dump("\033[0;35m".__METHOD__."\033[0m: Logged Table - ".$this->loggedTable.", Changed By - ".$this->changedBy);
+                //if (!is_null($this->loggedTable) && !is_null($this->changedBy)) {
+                $this->logActivity($item, $this->LoggingDetails->getOffset());
+                //}
+            }
+            /*else {
+                var_dump("\033[0;36m".__METHOD__."\033[0m: Check Loggable: ".($checkLoggable ? "True" : "False")."\r");
+                var_dump("\033[0;36m".__METHOD__."\033[0m: Class '".$getItemClass."' is not set to 'ActivityLoggable'\r");
+            }*/
         }
         if ($batchRemovalKeys) {
             $this->dynamodbTable->batchDelete($batchRemovalKeys);
@@ -261,6 +294,8 @@ class ItemRepository
     {
         /** @var string[] $fieldNameMapping */
         $fieldNameMapping = $this->itemReflection->getFieldNameMapping();
+        var_dump("\033[0;33mField Name Mapping:\033[0m ".print_r($fieldNameMapping, true)."\r");
+        var_dump("\033[0;31mGet key:\033[0m ".print_r($keys, true)."\r");
         $translatedKeys   = [];
         foreach ($keys as $k => $v) {
             if (!isset($fieldNameMapping[$k])) {
@@ -447,8 +482,15 @@ class ItemRepository
      */
     public function persist($obj)
     {
+        var_dump("\033[0;32m Persist Object\033[0m: ".print_r($obj, true)."\r");
+        var_dump("\033[0;36m Get Reflection Class\033[0m: ".print_r($this->itemReflection->getReflectionClass(), true)."\r");
+        var_dump("\033[0;31m Is Instance of Object\033[0m: ".print_r($this->itemReflection->getReflectionClass()->isInstance($obj), true)."\r");
+
+        var_dump("\033[0;36m Get Reflection Class Name\033[0m: ".$this->itemReflection->getReflectionClass()->getName()."\r");
+        var_dump("\033[0;36m Get Item Class\033[0m: ".$this->itemReflection->getItemClass()."\r");
+
         if (!$this->itemReflection->getReflectionClass()->isInstance($obj)) {
-            throw new ODMException("Persisting wrong object, expecting: " . $this->itemReflection->getItemClass());
+            throw new ODMException("Persisting wrong object, expecting: " . $this->itemReflection->getItemClass());//.", received: ".$this->itemReflection->getReflectionClass()->getName());
         }
         $id = $this->itemReflection->getPrimaryIdentifier($obj);
         if (isset($this->itemManaged[$id])) {
@@ -931,5 +973,21 @@ class ItemRepository
         }
         
         return $obj;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTableName(): string
+    {
+        return $this->tableName;
+    }
+
+    /**
+     * @param string $tableName
+     */
+    public function setTableName(string $tableName): void
+    {
+        $this->tableName = $tableName;
     }
 }

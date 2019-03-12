@@ -17,6 +17,7 @@ use Oasis\Mlib\ODM\Dynamodb\Annotations\PartitionedHashKey;
 /**
  * Class User
  *
+ * @ActivityLogging(enable=true)
  * @Item(
  *     table="users",
  *     primaryIndex=@Index(hash="id"),
@@ -27,13 +28,12 @@ use Oasis\Mlib\ODM\Dynamodb\Annotations\PartitionedHashKey;
  *     }
  *     )
  * @package Oasis\Mlib\ODM\Dynamodb
- * @ActivityLogging(enable=true)
  */
 class User
 {
     /**
      * @var int
-     * @Field(type="number", name="uid")
+     * @Field(type="number", name="id")
      */
     protected $id = 0;
     /**

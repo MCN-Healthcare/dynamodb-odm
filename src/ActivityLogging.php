@@ -13,6 +13,8 @@
 
 namespace Oasis\Mlib\ODM\Dynamodb;
 
+use Oasis\Mlib\ODM\Dynamodb\Entity\ActivityLog;
+
 class ActivityLogging
 {
 
@@ -36,6 +38,12 @@ class ActivityLogging
      * @var int
      */
     private $offset;
+    /**
+     * @var bool
+     */
+    public $enable;
+    /** @var ItemReflection  */
+    private $logItemReflection;
 
     /**
      * ActivityLogging constructor.
@@ -57,6 +65,11 @@ class ActivityLogging
         $this->loggedTable      = $loggedTable;
         $this->changedBy        = $changedBy;
         $this->offset           = $offset;
+
+        $this->logItemReflection = new ItemReflection(ActivityLog::class, null);
+        $this->logItemManager = new ItemManager($itemManager->getDynamodbConfig(), $itemManager->getDefaultTablePrefix(), $itemManager->getCacheDir(), $itemManager->isDev());
+
+        var_dump(__METHOD__."\033[0;34mItem Reflection from ActivityLogging\033[0m: ".print_r($this->logItemReflection, true)."\r");
     }
 
     /**
@@ -64,15 +77,37 @@ class ActivityLogging
      */
     private function getItemRepository(): ItemRepository
     {
+        /*
         $activityLoggingDetails = new ActivityLoggingDetails(
             $this->changedBy,
             $this->loggedTable,
             $this->offset
         );
+        */
 
-        return new ItemRepository($this->itemReflection,
+        return new ItemRepository(//$this->logItemReflection,
+            $this->itemReflection,
             $this->itemManager,
-            $activityLoggingDetails
+            $this->getActivityLoggingDetails()
+        );
+    }
+
+    private function getLogRepository(): ItemRepository
+    {
+
+        return new ItemRepository(
+            $this->logItemReflection,
+            $this->logItemManager,
+            $this->getActivityLoggingDetails()
+        );
+    }
+
+    private function getActivityLoggingDetails()
+    {
+        return new ActivityLoggingDetails(
+            $this->changedBy,
+            $this->loggedTable,
+            $this->offset
         );
     }
 
@@ -111,18 +146,27 @@ class ActivityLogging
         // set the timestamp
         $now = time() + $this->offset;
 
+        //$itemReflection2  = new ItemReflection($this->itemManager->getItemReflection($this->getItemRepository()), $this->itemManager->getReservedAttributeNames());
+        //$itemClass = $this->itemReflection2->getItemClass();
+        //var_dump(__METHOD__."\033[0;33m Get Item Class:\033[0m: ".print_r($itemClass, true)."\r");
+
         // create the log object to be inserted into the table after casting the previous objects as arrays
         $logObject = (object) [
                 'loggedTable'       => $this->loggedTable,
                 'changedBy'         => $this->changedBy,
                 'changedDateTime'   => $now,
-                'previousValue'     => (array) $dataObj,
-                'changedToValue'    => (array) $previousObject,
+                'previousValue'     => (array) $previousObject,
+                'changedToValue'    => (array) $dataObj,
             ];
 
+        var_dump(__METHOD__." \033[0;34m Log Object\033[0m: ".print_r($logObject, true)."\r");
+
+        $logRepo = $this->getLogRepository();
+
         // write the object to the activity log table
-        $repo->persist($logObject);
-        $repo->flush();
+        //$logRepo->refresh($logObject, true);
+        $logRepo->persist($logObject);
+        $logRepo->flush();
 
         return true;
     }

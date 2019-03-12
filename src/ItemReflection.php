@@ -129,6 +129,9 @@ class ItemReflection
         // initialize class annotation info
         $this->reflectionClass = new \ReflectionClass($this->itemClass);
         $this->itemDefinition  = $reader->getClassAnnotation($this->reflectionClass, Item::class);
+
+        var_dump(__METHOD__." - \033[034mItem Definition\033[0m: ".print_r($this->itemDefinition, true)."\r");
+
         if (!$this->itemDefinition) {
             throw new NotAnnotatedException("Class " . $this->itemClass . " is not configured as an Item");
         }

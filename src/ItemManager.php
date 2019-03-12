@@ -15,6 +15,7 @@ use Doctrine\Common\Cache\FilesystemCache;
 use Oasis\Mlib\ODM\Dynamodb\Exceptions\ODMException;
 use Oasis\Mlib\ODM\Dynamodb\Ut\UTConfig;
 use Symfony\Component\Finder\Finder;
+use Oasis\Mlib\ODM\Dynamodb\Annotations\ActivityLogging;
 
 class ItemManager
 {
@@ -48,11 +49,18 @@ class ItemManager
      * @var bool
      */
     protected $skipCheckAndSet = false;
-    
+
+    /** @var  */
+    private $cacheDir;
+    /** @var bool  */
+    private $isDev;
+
     public function __construct(array $dynamodbConfig, $defaultTablePrefix, $cacheDir, $isDev = true)
     {
         $this->dynamodbConfig     = $dynamodbConfig;
         $this->defaultTablePrefix = $defaultTablePrefix;
+        $this->cacheDir = $cacheDir;
+        $this->isDev = $isDev;
         
         AnnotationRegistry::registerLoader([$this, 'loadAnnotationClass']);
         
@@ -291,11 +299,36 @@ class ItemManager
 
         $classAnnotations =  $reader->getClassAnnotations($refClass);
 
+        //var_dump("\033[0;35m".__METHOD__."\033[0m: Class Annotations - ".print_r($classAnnotations, true)."\r");
+
+        $i = 0;
         foreach ($classAnnotations as $annot) {
+            /*var_dump("\033[0;32mAnnotation:\033[0m: ".print_r($annot, true)."\r");
+            if (!is_null($reader->getClassAnnotation($refClass, 'ActivityLogging'))) {
+                var_dump("\033[0;33m".__METHOD__ . "\033[0m: Get Class Annotations - " . $reader->getClassAnnotation($refClass, 'ActivityLogging')."\r");
+            }*/
             if ($annot instanceof ActivityLogging) {
+                var_dump("\033[0;31m" . __METHOD__ . "\033[0m - Annotation Activity Logging Enable?: " . $annot->enable . "\r");
                 return $annot->enable;
             }
+            $i++;
         }
         return false;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCacheDir()
+    {
+        return $this->cacheDir;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isDev(): bool
+    {
+        return $this->isDev;
     }
 }
