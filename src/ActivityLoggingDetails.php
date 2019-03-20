@@ -30,18 +30,28 @@ class ActivityLoggingDetails
      * @var int
      */
     private $offset;
+    /**
+     * @var string
+     */
+    private $logTable;
 
     /**
      * ActivityLoggingDetails constructor.
-     * @param $changedBy    - The user that performed the change of the record on the table
-     * @param $loggedTable  - The Table being logged
-     * @param int $offset   - The Timestamp Offset
+     * @param string $changedBy     - The user that performed the change of the record on the table
+     * @param string $loggedTable   - The Table being logged
+     * @param int $offset           - The Timestamp Offset
+     * @param string $logTable      - the table that you're logging to
      */
-    public function __construct($changedBy = '', string $loggedTable = '', int $offset = 0)
+    public function __construct($changedBy = '',
+            string $loggedTable = '',
+            int $offset = 0,
+            string $logTable = 'ActivityLog'
+    )
     {
         $this->changedBy = $changedBy;
         $this->loggedTable = $loggedTable;
         $this->offset = $offset;
+        $this->logTable = $logTable;
     }
 
     /**
@@ -95,5 +105,13 @@ class ActivityLoggingDetails
     public function setOffset(int $offset): void
     {
         $this->offset = $offset;
+    }
+
+    /**
+     * @return string
+     */
+    public function getLogTableName()
+    {
+        return $this->logTable;
     }
 }

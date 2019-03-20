@@ -209,6 +209,7 @@ class ItemManager
      */
     public function getItemReflection($itemClass)
     {
+        //var_dump("\033[0;34m Item Manager Get Item Reflection Item Class\033[0m: ".$itemClass."\r");
         if (!isset($this->itemReflections[$itemClass])) {
             $reflection = new ItemReflection($itemClass, $this->reservedAttributeNames);
             $reflection->parse($this->reader);
@@ -308,7 +309,7 @@ class ItemManager
                 var_dump("\033[0;33m".__METHOD__ . "\033[0m: Get Class Annotations - " . $reader->getClassAnnotation($refClass, 'ActivityLogging')."\r");
             }*/
             if ($annot instanceof ActivityLogging) {
-                var_dump("\033[0;31m" . __METHOD__ . "\033[0m - Annotation Activity Logging Enable?: " . $annot->enable . "\r");
+                //var_dump("\033[0;31m" . __METHOD__ . "\033[0m - Annotation Activity Logging Enable?: " . $annot->enable . "\r");
                 return $annot->enable;
             }
             $i++;

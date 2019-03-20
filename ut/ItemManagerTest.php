@@ -9,12 +9,13 @@
 namespace Oasis\Mlib\ODM\Dynamodb\Ut;
 
 use Oasis\Mlib\AwsWrappers\DynamoDbIndex;
-use Oasis\Mlib\ODM\Dynamodb\Entity\ActivityLog;
+//use Oasis\Mlib\ODM\Dynamodb\Entity\ActivityLog;
 use Oasis\Mlib\ODM\Dynamodb\Exceptions\DataConsistencyException;
 use Oasis\Mlib\ODM\Dynamodb\Exceptions\ODMException;
 use Oasis\Mlib\ODM\Dynamodb\ItemManager;
 use Oasis\Mlib\ODM\Dynamodb\ActivityLogging;
 use Oasis\Mlib\ODM\Dynamodb\ItemReflection;
+use Oasis\Mlib\ODM\Dynamodb\Ut\ActivityLog;
 
 
 class ItemManagerTest extends \PHPUnit_Framework_TestCase
@@ -30,6 +31,8 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
     /** @var ActivityLogging */
     private $activityLogging;
 
+    private $activityLogReflector;
+
     protected function setUp()
     {
         parent::setUp();
@@ -41,7 +44,9 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         );
 
         $this->itemReflector = new ItemReflection(User::class, null);
+        $this->activityLogReflector = new ItemReflection(ActivityLog::class, null);
 
+        /*
         $this->activityLogging = new ActivityLogging(
             $this->itemReflector,
             $this->itemManager,
@@ -49,6 +54,7 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
             User::class, //$this->itemReflector->getTableName(),
             0
         );
+        */
     }
     
     public function testPersistAndGet()
@@ -647,13 +653,60 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         $this->itemManager->flush();
     }
 
+
+    public function testGetLoggableDetails()
+    {
+        $id = (microtime(true) * 10000);
+        $activityLog = new ActivityLog();
+        $activityLog->setLoggedTable('TestTable');
+        $activityLog->setId($id);
+        $activityLog->setChangedDateTime(time());
+        $activityLog->setPreviousValues(["previous_value" => "Some test previous value", "now" => strftime("%Y/%m/%d @ %H:%i:%s")]);
+        $activityLog->setChangedToValues(["changed_value" => "Some test changed to value", "now" => strftime("%Y/%m/%d @ %H:%i:%s")]);
+        $activityLog->setChangedBy("TestChangedBy".$id);
+
+        $this->itemManager->persist($activityLog);
+        $this->itemManager->flush();
+        //$loggedDetails = $this->itemManager->getRepository(ActivityLog::class);
+        //$loggedTableName = $loggedDetails->getTableName();
+        //echo __METHOD__ . "\033[0;31m: Test Loggable Details \033[0m: ".print_r($loggedDetails, true)."\r";
+        //echo __METHOD__ . "\033[0;31m: Test Loggable Table Name \033[0m: ".print_r($loggedTableName, true)."\r";
+
+        //$loggedReflectorTableName = $this->activityLogReflector->getTableName();
+        //echo __METHOD__ . "\033[0;31m: Test Loggable Reflector Table Name \033[0m: ".print_r($loggedReflectorTableName, true)."\r";
+
+        var_dump($this->activityLogReflector);
+    }
+
+    public function testCanLogActivity()
+    {
+        $id = (microtime(true) * 10000);
+        echo "\r\033[0;32m ID\033[0m: $id\r";
+
+        $activityLog = new ActivityLog();
+        $activityLog->setLoggedTable('TestTable');
+        $activityLog->setId($id);
+        $activityLog->setChangedDateTime(time());
+        $activityLog->setPreviousValues(["previous_value" => "Some test previous value", "now" => strftime("%Y/%m/%d @ %H:%M:%S")]);
+        $activityLog->setChangedToValues(["changed_value" => "Some test changed to value", "now" => strftime("%Y/%m/%d @ %H:%M:%S")]);
+        $activityLog->setChangedBy("TestChangedBy".$id);
+
+        $this->itemManager->persist($activityLog);
+        $this->itemManager->flush();
+
+        $getLogById = $this->itemManager->get(ActivityLog::class, ['id' => $id]);
+
+        $this->assertEquals($activityLog, $getLogById);
+
+    }
+
     /**
      * @return void
      */
     public function testLoggableIsEnabledOnUser()
     {
         ini_set("memory_limit","1G");
-        echo "\rMemory Limit: ".ini_get("memory_limit")."\r";
+        echo "\r\033[0;32m Memory Limit\033[0m: ".ini_get("memory_limit")."\r";
 
         ini_set('xdebug.var_display_max_depth', '10');
         ini_set('xdebug.var_display_max_children', '256');
@@ -697,7 +750,6 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
 
         //$this->assertTrue(!is_null($this->itemManager->get(User::class, ['id' => $id])));
         //$this->assertTrue(!is_null($this->itemManager->get(ActivityLog::class, ['changedBy' => $changedBy])));
-
     }
 }
 

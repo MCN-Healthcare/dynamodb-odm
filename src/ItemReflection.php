@@ -59,6 +59,8 @@ class ItemReflection
      * Reserved attribute names will be cleared when hydrating an object
      */
     protected $reservedAttributeNames;
+
+    private $reader;
     /**
      * @var array
      * Activity Logging property, in the format of entity name => true/false
@@ -69,6 +71,11 @@ class ItemReflection
     {
         $this->itemClass              = $itemClass;
         $this->reservedAttributeNames = $reservedAttributeNames;
+
+        /*
+        var_dump("\033[0;36m ".__METHOD__." Item Class\033[0m: ".print_r($this->itemClass, true));
+        var_dump("\033[0;36m ".__METHOD__." Reserved Attribute Names\033[0m: ".print_r($this->reservedAttributeNames, true));
+        */
     }
     
     public function dehydrate($obj)
@@ -126,11 +133,21 @@ class ItemReflection
     
     public function parse(Reader $reader)
     {
+        /* * /
+        var_dump("\033[0;32m Parse Reader\033[0m: ");
+        var_dump($reader);
+        var_dump("\r");
+
+        var_dump("\033[0;34m Parse Reader Item Class\033[0m: ".$this->itemClass."\r");
+        /* */
+
+        $this->reader = $reader;
+
         // initialize class annotation info
         $this->reflectionClass = new \ReflectionClass($this->itemClass);
         $this->itemDefinition  = $reader->getClassAnnotation($this->reflectionClass, Item::class);
 
-        var_dump(__METHOD__." - \033[034mItem Definition\033[0m: ".print_r($this->itemDefinition, true)."\r");
+        //var_dump(__METHOD__." - \033[034mItem Definition\033[0m: ".print_r($this->itemDefinition, true)."\r");
 
         if (!$this->itemDefinition) {
             throw new NotAnnotatedException("Class " . $this->itemClass . " is not configured as an Item");
@@ -363,6 +380,15 @@ class ItemReflection
     
     public function getTableName()
     {
+        /* * /
+        var_dump($this->itemDefinition);
+        var_dump("\033[0;32m Backtrace for ".__METHOD__.":\033[0m \r");
+        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+        var_dump($backtrace);
+
+        var_dump($this->reflectionClass->getDocComment());
+        /* */
+
         return $this->itemDefinition->table;
     }
 
