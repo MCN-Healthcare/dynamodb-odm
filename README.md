@@ -13,6 +13,23 @@ To get oasis/dynamodb-odm, you can simple require it via `composer`:
 $ composer require oasis/dynamodb-odm
 ```
 
+##### Linux, BSD, Mac
+* update environment with
+ 
+```bash 
+$ export AWS_SECRET_ACCESS_KEY=mysecrettestaccesskey
+$ export AWS_SECRET_ACCESS_KEY_ID=mysecrettestaccesskeyid
+```
+
+* edit `~/.aws/credentials` with the following values
+```
+[test-profile]
+aws_session_token=test-token
+aws_access_key_id=test-key-id
+aws_secret_access_key=mysecrettestaccesskey
+aws_secret_access_key_id=mysecrettestaccesskeyid
+```
+
 ##
 ### Class Loading
 
