@@ -65,19 +65,23 @@ class ItemReflection
      * @var array
      * Activity Logging property, in the format of entity name => true/false
      */
-    private $activityLoggingProperties;
+    private $activityLoggingProperties = [];
 
+    /**
+     * ItemReflection constructor.
+     * @param $itemClass
+     * @param $reservedAttributeNames
+     */
     public function __construct($itemClass, $reservedAttributeNames)
     {
         $this->itemClass              = $itemClass;
         $this->reservedAttributeNames = $reservedAttributeNames;
-
-        /*
-        var_dump("\033[0;36m ".__METHOD__." Item Class\033[0m: ".print_r($this->itemClass, true));
-        var_dump("\033[0;36m ".__METHOD__." Reserved Attribute Names\033[0m: ".print_r($this->reservedAttributeNames, true));
-        */
     }
-    
+
+    /**
+     * @param $obj
+     * @return array
+     */
     public function dehydrate($obj)
     {
         if (!is_object($obj)) {
@@ -99,7 +103,12 @@ class ItemReflection
         
         return $array;
     }
-    
+
+    /**
+     * @param array $array
+     * @param null $obj
+     * @return object|null
+     */
     public function hydrate(array $array, $obj = null)
     {
         if ($obj === null) {
@@ -130,24 +139,20 @@ class ItemReflection
         
         return $obj;
     }
-    
+
+    /**
+     * Annotation reader of the DynamoDB entity
+     *
+     * @param Reader $reader
+     * @throws \ReflectionException
+     */
     public function parse(Reader $reader)
     {
-        /* * /
-        var_dump("\033[0;32m Parse Reader\033[0m: ");
-        var_dump($reader);
-        var_dump("\r");
-
-        var_dump("\033[0;34m Parse Reader Item Class\033[0m: ".$this->itemClass."\r");
-        /* */
-
         $this->reader = $reader;
 
         // initialize class annotation info
         $this->reflectionClass = new \ReflectionClass($this->itemClass);
         $this->itemDefinition  = $reader->getClassAnnotation($this->reflectionClass, Item::class);
-
-        //var_dump(__METHOD__." - \033[034mItem Definition\033[0m: ".print_r($this->itemDefinition, true)."\r");
 
         if (!$this->itemDefinition) {
             throw new NotAnnotatedException("Class " . $this->itemClass . " is not configured as an Item");
@@ -187,7 +192,12 @@ class ItemReflection
             }
         }
     }
-    
+
+    /**
+     * @param $hashKeyName
+     * @param $baseValue
+     * @return array
+     */
     public function getAllPartitionedValues($hashKeyName, $baseValue)
     {
         if (!isset($this->partitionedHashKeys[$hashKeyName])) {
@@ -203,7 +213,12 @@ class ItemReflection
         
         return $ret;
     }
-    
+
+    /**
+     * @param $obj
+     * @param $propertyName
+     * @return mixed
+     */
     public function getPropertyValue($obj, $propertyName)
     {
         if (!$obj instanceof $this->itemClass) {
@@ -225,7 +240,12 @@ class ItemReflection
         
         return $ret;
     }
-    
+
+    /**
+     * @param $obj
+     * @param $propertyName
+     * @param $value
+     */
     public function updateProperty($obj, $propertyName, $value)
     {
         if (!$obj instanceof $this->itemClass) {
@@ -288,7 +308,10 @@ class ItemReflection
         
         return $ret;
     }
-    
+
+    /**
+     * @return array
+     */
     public function getProjectedAttributes()
     {
         if ($this->getItemDefinition()->projected) {
@@ -322,7 +345,11 @@ class ItemReflection
     {
         return $this->partitionedHashKeys;
     }
-    
+
+    /**
+     * @param $obj
+     * @return string
+     */
     public function getPrimaryIdentifier($obj)
     {
         $id = '';
@@ -332,7 +359,12 @@ class ItemReflection
         
         return md5($id);
     }
-    
+
+    /**
+     * @param $obj
+     * @param bool $asAttributeKeys
+     * @return array
+     */
     public function getPrimaryKeys($obj, $asAttributeKeys = true)
     {
         $keys = [];
@@ -372,26 +404,26 @@ class ItemReflection
     {
         return $this->reflectionClass;
     }
-    
+
+    /**
+     * @return string
+     */
     public function getRepositoryClass()
     {
         return $this->itemDefinition->repository ? : ItemRepository::class;
     }
-    
+
+    /**
+     * @return string
+     */
     public function getTableName()
     {
-        /* * /
-        var_dump($this->itemDefinition);
-        var_dump("\033[0;32m Backtrace for ".__METHOD__.":\033[0m \r");
-        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-        var_dump($backtrace);
-
-        var_dump($this->reflectionClass->getDocComment());
-        /* */
-
         return $this->itemDefinition->table;
     }
 
+    /**
+     * @return array
+     */
     public function getActivityLoggingProperties()
     {
         return $this->activityLoggingProperties;

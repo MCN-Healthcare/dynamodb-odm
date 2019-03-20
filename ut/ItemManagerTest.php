@@ -36,6 +36,14 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
     protected function setUp()
     {
         parent::setUp();
+
+        ini_set("memory_limit","1G");
+        //echo "\r\033[0;32m Memory Limit\033[0m: ".ini_get("memory_limit")."\r";
+
+        ini_set('xdebug.var_display_max_depth', '10');
+        ini_set('xdebug.var_display_max_children', '256');
+        ini_set('xdebug.var_display_max_data', '1024');
+
         $this->itemManager  = new ItemManager(
             UTConfig::$dynamodbConfig, UTConfig::$tablePrefix, __DIR__ . "/cache", true
         );
@@ -69,7 +77,6 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         
         /** @var User $user2 */
         $user2 = $this->itemManager->get(User::class, ['id' => $id]);
-        print_r($user2);
         
         $this->assertEquals($user, $user2); // user object will be reused when same primary keys are used
         $this->assertEquals('Alice', $user2->getName());
@@ -653,35 +660,9 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         $this->itemManager->flush();
     }
 
-
-    public function testGetLoggableDetails()
-    {
-        $id = (microtime(true) * 10000);
-        $activityLog = new ActivityLog();
-        $activityLog->setLoggedTable('TestTable');
-        $activityLog->setId($id);
-        $activityLog->setChangedDateTime(time());
-        $activityLog->setPreviousValues(["previous_value" => "Some test previous value", "now" => strftime("%Y/%m/%d @ %H:%i:%s")]);
-        $activityLog->setChangedToValues(["changed_value" => "Some test changed to value", "now" => strftime("%Y/%m/%d @ %H:%i:%s")]);
-        $activityLog->setChangedBy("TestChangedBy".$id);
-
-        $this->itemManager->persist($activityLog);
-        $this->itemManager->flush();
-        //$loggedDetails = $this->itemManager->getRepository(ActivityLog::class);
-        //$loggedTableName = $loggedDetails->getTableName();
-        //echo __METHOD__ . "\033[0;31m: Test Loggable Details \033[0m: ".print_r($loggedDetails, true)."\r";
-        //echo __METHOD__ . "\033[0;31m: Test Loggable Table Name \033[0m: ".print_r($loggedTableName, true)."\r";
-
-        //$loggedReflectorTableName = $this->activityLogReflector->getTableName();
-        //echo __METHOD__ . "\033[0;31m: Test Loggable Reflector Table Name \033[0m: ".print_r($loggedReflectorTableName, true)."\r";
-
-        var_dump($this->activityLogReflector);
-    }
-
     public function testCanLogActivity()
     {
         $id = (microtime(true) * 10000);
-        echo "\r\033[0;32m ID\033[0m: $id\r";
 
         $activityLog = new ActivityLog();
         $activityLog->setLoggedTable('TestTable');
@@ -705,51 +686,39 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
      */
     public function testLoggableIsEnabledOnUser()
     {
-        ini_set("memory_limit","1G");
-        echo "\r\033[0;32m Memory Limit\033[0m: ".ini_get("memory_limit")."\r";
-
-        ini_set('xdebug.var_display_max_depth', '10');
-        ini_set('xdebug.var_display_max_children', '256');
-        ini_set('xdebug.var_display_max_data', '1024');
-
-        $id   = mt_rand(1000, PHP_INT_MAX);
+        $random_var   = (microtime(true) * 10000);
+        $id = 0;
         $user = new User();
         $user->setId($id);
-        $user->setName($id.'_Billy Bo Bob Brain');
+        $user->setName('Billy Bo Bob Brain '.$random_var);
+        $user->setAge(31);
+        $user->setWage(64000);
 
         $this->itemManager->persist($user);
         $this->itemManager->flush();
-
-        echo "\r".__METHOD__.": Get Possible Item Classes: ".print_r($this->itemManager->getPossibleItemClasses(), true)."\r";
 
         /** @var User $user2 */
         $user2 = $this->itemManager->get(User::class, ['id' => $id]);
 
         $this->assertEquals($user, $user2); // user object will be reused when same primary keys are used
-        $this->assertEquals($id.'_Billy Bo Bob Brain', $user2->getName());
+        $this->assertEquals('Billy Bo Bob Brain '.$random_var, $user2->getName());
 
+        /* * /
         $changedBy = "SomeUserChangingStuff";
-        //$loggedTable = $this->itemReflector->getTableName();
         $loggedTable = $this->itemManager->getRepository(User::class)->getTableName();
         $offset = 0;
 
-        echo "\r\r\r";
-        echo __METHOD__.": Logged Table: ".print_r($loggedTable, true)."\r";
-
-        //$activityLogging = new ActivityLogging($this->itemReflector, $this->itemManager, $changedBy, $loggedTable, $offset);
-        //$activityLogging = new ActivityLogging($this->itemReflector, $this->itemManager, $changedBy, User::class, $offset);
-
-        //echo "Activity Logging: ".print_r($activityLogging, true)."\r";
 
         $activityLog = $this->itemManager->getRepository(User::class)->get(['id' => $id]);
 
-        echo __METHOD__.": Activity Log: ".print_r($activityLog, true)."\r";
+        //echo __METHOD__.": Activity Log: ".print_r($activityLog, true)."\r";
 
         //$logit = $this->itemManager->getRepository(User::class)->logActivity($activityLog);
 
 
         //$this->assertTrue(!is_null($this->itemManager->get(User::class, ['id' => $id])));
         //$this->assertTrue(!is_null($this->itemManager->get(ActivityLog::class, ['changedBy' => $changedBy])));
+        /* */
     }
 }
 

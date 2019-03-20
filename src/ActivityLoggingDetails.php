@@ -42,8 +42,8 @@ class ActivityLoggingDetails
      * @param int $offset           - The Timestamp Offset
      * @param string $logTable      - the table that you're logging to
      */
-    public function __construct($changedBy = '',
-            string $loggedTable = '',
+    public function __construct($changedBy = null,
+            string $loggedTable = null,
             int $offset = 0,
             string $logTable = 'ActivityLog'
     )
@@ -67,11 +67,6 @@ class ActivityLoggingDetails
      */
     public function setLoggedTable($tableName): void
     {
-//        $em = $this->getDoctrine()->getManager();
-//        $loggedTable = $em->getClassMetadata($tableName)->getTableName();
-//        $loggedTable = AnnotationRegistry::registerLoader($tableName);
-
-//        $this->loggedTable = $loggedTable;
         $this->loggedTable = $tableName;
     }
 

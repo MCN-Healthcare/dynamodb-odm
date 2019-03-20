@@ -30,11 +30,11 @@ class ActivityLogging
     /**
      * @var string
      */
-    private $loggedTable;
+    private $loggedTable = null;
     /**
      * @var mixed
      */
-    private $changedBy;
+    private $changedBy = null;
     /**
      * @var int
      */
@@ -50,9 +50,6 @@ class ActivityLogging
     /** @var ItemManager */
     private $logItemManager;
 
-    /** @var string */
-    private $logTable;
-
     /** @var \Doctrine\Common\Annotations\AnnotationReader */
     private $reader;
 
@@ -66,7 +63,7 @@ class ActivityLogging
      */
     public function __construct(ItemReflection $itemReflection,
                                 ItemManager $itemManager,
-                                $changedBy = 'UnknownUser',
+                                $changedBy = null,
                                 string $loggedTable = "",
                                 int $offset = 0
     )
@@ -78,26 +75,11 @@ class ActivityLogging
         $this->offset           = $offset;
 
         $this->logItemManager = new ItemManager($this->itemManager->getDynamodbConfig(), $this->itemManager->getDefaultTablePrefix(), $this->itemManager->getCacheDir(), $this->itemManager->isDev());
-        //var_dump($this->itemManager);
-        //var_dump($this->logItemManager);
-        //die;
         $this->logItemReflection = new ItemReflection(ActivityLog::class, null);
-        //var_dump($this->logItemReflection);
 
         $this->reader = $this->logItemManager->getReader();
 
         $this->logItemReflection->parse($this->reader);
-
-        /* * /
-        var_dump(__METHOD__."\033[0;32m Log Item Reflection from ActivityLogging\033[0m: ".print_r($this->logItemReflection, true)."\r");
-        var_dump(__METHOD__."\033[0;32m Log Item Manager from ActivityLogging\033[0m: ".print_r($this->logItemManager, true)."\r");
-
-        var_dump(__METHOD__."\033[0;33m Item Reflection from ActivityLogging\033[0m: ".print_r($this->itemReflection, true)."\r");
-        var_dump(__METHOD__."\033[0;33m Item Manager from ActivityLogging\033[0m: ".print_r($this->itemManager, true)."\r");
-
-        /* */
-        var_dump(__METHOD__."\033[0;32m Log Item Reader from ActivityLogging\033[0m: ".print_r($this->reader, true)."\r");
-        /* */
 
     }
 
@@ -106,15 +88,7 @@ class ActivityLogging
      */
     private function getItemRepository(): ItemRepository
     {
-        /*
-        $activityLoggingDetails = new ActivityLoggingDetails(
-            $this->changedBy,
-            $this->loggedTable,
-            $this->offset
-        );
-        */
-
-        return new ItemRepository(//$this->logItemReflection,
+        return new ItemRepository(
             $this->itemReflection,
             $this->itemManager,
             $this->getActivityLoggingDetails()
@@ -128,13 +102,6 @@ class ActivityLogging
             $this->logItemManager,
             $this->getActivityLoggingDetails()
         );
-
-        /* * /
-        var_dump("\033[0;32m ".__METHOD__." Start \033[0m: \r");
-        var_dump($logRepository);
-        var_dump("\033[0;32m ".__METHOD__." End \033[0m: \r");
-        /* */
-
         return $logRepository;
     }
 
@@ -146,7 +113,6 @@ class ActivityLogging
             $this->offset
         );
 
-        //var_dump("\033[0;32m Get Activity Logging Details\033[0m: ".print_r($activityLoggingDetails, true)."\r");
         return $activityLoggingDetails;
     }
 
@@ -186,20 +152,28 @@ class ActivityLogging
         $now = time() + $this->offset;
 
         // create the log object to be inserted into the table after casting the previous objects as arrays
-        $logObject = $this->createLogObject($now, $previousObject, $dataObj);
-
-        //var_dump(__METHOD__."\r\r \033[0;34m Log Object\033[0m: \r");
-        //var_dump($logObject);
-
-        $logRepo = $this->getLogRepository();
+        $cleanPreviousObject = $this->cleanArray((array)$previousObject);
+        $cleanDataObj = $this->cleanArray((array)$dataObj);
+        $logObject = $this->createLogObject($now, $cleanPreviousObject, $cleanDataObj);
 
         // write the object to the activity log table
-        //$logRepo->refresh($logObject, true);
-        //var_dump("\033[0;33m Insert Into Activity Log - Log Object\033[0m:".print_r($logObject, true)."r");
-        $logRepo->persistLoggable($logObject);
-        $logRepo->flush();
+        $this->logItemManager->persist($logObject);
+        $this->logItemManager->flush();
 
         return true;
+    }
+
+    private function cleanArray(array $array)
+    {
+        $clean_array = [];
+
+        foreach ($array as $key => $value) {
+            $clean_key = str_replace("\\u0000", '', $key);
+            $clean_value = str_replace("\\u0000", '', $value);
+            $clean_array[$clean_key] = $clean_value;
+        }
+
+        return $clean_array;
     }
 
     /**
@@ -217,12 +191,34 @@ class ActivityLogging
         $logObject = new ActivityLog();
         $logObject->setId($id);
         $logObject->setLoggedTable($this->loggedTable);
-        $logObject->setChangedBy($this->changedBy);
+        $logObject->setChangedBy($this->getChangedBy());
         $logObject->setChangedDateTime($now);
         $logObject->setPreviousValues((array)$previousObject);
         $logObject->setChangedToValues((array)$dataObj);
 
         return $logObject;
+    }
+
+    /**
+     * Get the user that changed the tablet hat is being logged for activity, if null/not set, try to set it
+     *
+     * @return string|null
+     */
+    private function getChangedBy(): ?string
+    {
+        if (!isset($this->changedBy) || null == $this->changedBy){
+            if (isset($_SERVER['REMOTE_USER'])) {
+                $this->changedBy = $_SERVER['REMOTE_USER'];
+            }
+            elseif (isset($_SERVER['REMOTE_ADDR'])) {
+                $this->changedBy = $_SERVER['REMOTE_ADDR'];
+            }
+            else {
+                $this->changedBy = 'Unknown';
+            }
+        }
+
+        return $this->changedBy;
     }
 
     public function getLogItemReflection()

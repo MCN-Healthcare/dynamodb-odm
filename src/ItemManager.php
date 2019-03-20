@@ -209,7 +209,6 @@ class ItemManager
      */
     public function getItemReflection($itemClass)
     {
-        //var_dump("\033[0;34m Item Manager Get Item Reflection Item Class\033[0m: ".$itemClass."\r");
         if (!isset($this->itemReflections[$itemClass])) {
             $reflection = new ItemReflection($itemClass, $this->reservedAttributeNames);
             $reflection->parse($this->reader);
@@ -245,8 +244,6 @@ class ItemManager
      */
     public function getRepository($itemClass)
     {
-        //var_dump($this->repositories[$itemClass]);
-        //print_r($itemClass);
         if (!isset($this->repositories[$itemClass])) {
             $reflection                     = $this->getItemReflection($itemClass);
             $repoClass                      = $reflection->getRepositoryClass();
@@ -300,16 +297,9 @@ class ItemManager
 
         $classAnnotations =  $reader->getClassAnnotations($refClass);
 
-        //var_dump("\033[0;35m".__METHOD__."\033[0m: Class Annotations - ".print_r($classAnnotations, true)."\r");
-
         $i = 0;
         foreach ($classAnnotations as $annot) {
-            /*var_dump("\033[0;32mAnnotation:\033[0m: ".print_r($annot, true)."\r");
-            if (!is_null($reader->getClassAnnotation($refClass, 'ActivityLogging'))) {
-                var_dump("\033[0;33m".__METHOD__ . "\033[0m: Get Class Annotations - " . $reader->getClassAnnotation($refClass, 'ActivityLogging')."\r");
-            }*/
             if ($annot instanceof ActivityLogging) {
-                //var_dump("\033[0;31m" . __METHOD__ . "\033[0m - Annotation Activity Logging Enable?: " . $annot->enable . "\r");
                 return $annot->enable;
             }
             $i++;
