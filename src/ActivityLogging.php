@@ -168,8 +168,8 @@ class ActivityLogging
         $clean_array = [];
 
         foreach ($array as $key => $value) {
-            $clean_key = str_replace("\\u0000", '', $key);
-            $clean_value = str_replace("\\u0000", '', $value);
+            $clean_key = preg_replace('/[[:cntrl:]]/', '', $key);
+            $clean_value = preg_replace('/[[:cntrl:]]/', '', $value);
             $clean_array[$clean_key] = $clean_value;
         }
 
