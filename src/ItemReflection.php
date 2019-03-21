@@ -59,13 +59,29 @@ class ItemReflection
      * Reserved attribute names will be cleared when hydrating an object
      */
     protected $reservedAttributeNames;
-    
+
+    private $reader;
+    /**
+     * @var array
+     * Activity Logging property, in the format of entity name => true/false
+     */
+    private $activityLoggingProperties = [];
+
+    /**
+     * ItemReflection constructor.
+     * @param $itemClass
+     * @param $reservedAttributeNames
+     */
     public function __construct($itemClass, $reservedAttributeNames)
     {
         $this->itemClass              = $itemClass;
         $this->reservedAttributeNames = $reservedAttributeNames;
     }
-    
+
+    /**
+     * @param $obj
+     * @return array
+     */
     public function dehydrate($obj)
     {
         if (!is_object($obj)) {
@@ -87,7 +103,12 @@ class ItemReflection
         
         return $array;
     }
-    
+
+    /**
+     * @param array $array
+     * @param null $obj
+     * @return object|null
+     */
     public function hydrate(array $array, $obj = null)
     {
         if ($obj === null) {
@@ -118,12 +139,21 @@ class ItemReflection
         
         return $obj;
     }
-    
+
+    /**
+     * Annotation reader of the DynamoDB entity
+     *
+     * @param Reader $reader
+     * @throws \ReflectionException
+     */
     public function parse(Reader $reader)
     {
+        $this->reader = $reader;
+
         // initialize class annotation info
         $this->reflectionClass = new \ReflectionClass($this->itemClass);
         $this->itemDefinition  = $reader->getClassAnnotation($this->reflectionClass, Item::class);
+
         if (!$this->itemDefinition) {
             throw new NotAnnotatedException("Class " . $this->itemClass . " is not configured as an Item");
         }
@@ -162,7 +192,12 @@ class ItemReflection
             }
         }
     }
-    
+
+    /**
+     * @param $hashKeyName
+     * @param $baseValue
+     * @return array
+     */
     public function getAllPartitionedValues($hashKeyName, $baseValue)
     {
         if (!isset($this->partitionedHashKeys[$hashKeyName])) {
@@ -178,7 +213,12 @@ class ItemReflection
         
         return $ret;
     }
-    
+
+    /**
+     * @param $obj
+     * @param $propertyName
+     * @return mixed
+     */
     public function getPropertyValue($obj, $propertyName)
     {
         if (!$obj instanceof $this->itemClass) {
@@ -200,7 +240,12 @@ class ItemReflection
         
         return $ret;
     }
-    
+
+    /**
+     * @param $obj
+     * @param $propertyName
+     * @param $value
+     */
     public function updateProperty($obj, $propertyName, $value)
     {
         if (!$obj instanceof $this->itemClass) {
@@ -263,7 +308,10 @@ class ItemReflection
         
         return $ret;
     }
-    
+
+    /**
+     * @return array
+     */
     public function getProjectedAttributes()
     {
         if ($this->getItemDefinition()->projected) {
@@ -297,7 +345,11 @@ class ItemReflection
     {
         return $this->partitionedHashKeys;
     }
-    
+
+    /**
+     * @param $obj
+     * @return string
+     */
     public function getPrimaryIdentifier($obj)
     {
         $id = '';
@@ -307,7 +359,12 @@ class ItemReflection
         
         return md5($id);
     }
-    
+
+    /**
+     * @param $obj
+     * @param bool $asAttributeKeys
+     * @return array
+     */
     public function getPrimaryKeys($obj, $asAttributeKeys = true)
     {
         $keys = [];
@@ -347,14 +404,28 @@ class ItemReflection
     {
         return $this->reflectionClass;
     }
-    
+
+    /**
+     * @return string
+     */
     public function getRepositoryClass()
     {
         return $this->itemDefinition->repository ? : ItemRepository::class;
     }
-    
+
+    /**
+     * @return string
+     */
     public function getTableName()
     {
         return $this->itemDefinition->table;
+    }
+
+    /**
+     * @return array
+     */
+    public function getActivityLoggingProperties()
+    {
+        return $this->activityLoggingProperties;
     }
 }

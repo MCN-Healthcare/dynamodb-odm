@@ -5,6 +5,7 @@
         bootstrap="ut/bootstrap.php"
         backupGlobals="false"
         backupStaticAttributes="false"
+        convertNoticesToExceptions="false"
 >
     <testsuites>
         <testsuite name="basic">

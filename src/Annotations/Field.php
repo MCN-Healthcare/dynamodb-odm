@@ -22,7 +22,7 @@ class Field
     const CAS_DISABLED  = 'disabled';
     const CAS_ENABLED   = 'enabled';
     const CAS_TIMESTAMP = 'timestamp';
-    
+
     /**
      * @var string
      */
@@ -39,4 +39,16 @@ class Field
      * @Enum(value={"disabled", "enabled", "timestamp"})
      */
     public $cas = self::CAS_DISABLED;
+
+    /**
+     * @var string
+     * @Enum(value={"by", "on"})
+     */
+    public $created;
+
+    /**
+     * @var string
+     * @Enum(value={"by", "on"})
+     */
+    public $updated;
 }

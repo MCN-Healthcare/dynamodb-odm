@@ -8,6 +8,7 @@
 
 namespace Oasis\Mlib\ODM\Dynamodb\Ut;
 
+use Oasis\Mlib\ODM\Dynamodb\Annotations\ActivityLogging;
 use Oasis\Mlib\ODM\Dynamodb\Annotations\Field;
 use Oasis\Mlib\ODM\Dynamodb\Annotations\Index;
 use Oasis\Mlib\ODM\Dynamodb\Annotations\Item;
@@ -16,6 +17,7 @@ use Oasis\Mlib\ODM\Dynamodb\Annotations\PartitionedHashKey;
 /**
  * Class User
  *
+ * @ActivityLogging(enable=true)
  * @Item(
  *     table="users",
  *     primaryIndex=@Index(hash="id"),
@@ -31,7 +33,7 @@ class User
 {
     /**
      * @var int
-     * @Field(type="number", name="uid")
+     * @Field(type="number", name="id")
      */
     protected $id = 0;
     /**

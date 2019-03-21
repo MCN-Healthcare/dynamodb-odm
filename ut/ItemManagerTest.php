@@ -9,9 +9,14 @@
 namespace Oasis\Mlib\ODM\Dynamodb\Ut;
 
 use Oasis\Mlib\AwsWrappers\DynamoDbIndex;
+//use Oasis\Mlib\ODM\Dynamodb\Entity\ActivityLog;
 use Oasis\Mlib\ODM\Dynamodb\Exceptions\DataConsistencyException;
 use Oasis\Mlib\ODM\Dynamodb\Exceptions\ODMException;
 use Oasis\Mlib\ODM\Dynamodb\ItemManager;
+use Oasis\Mlib\ODM\Dynamodb\ActivityLogging;
+use Oasis\Mlib\ODM\Dynamodb\ItemReflection;
+use Oasis\Mlib\ODM\Dynamodb\Ut\ActivityLog;
+
 
 class ItemManagerTest extends \PHPUnit_Framework_TestCase
 {
@@ -19,16 +24,45 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
     protected $itemManager;
     /** @var  ItemManager */
     protected $itemManager2;
-    
+
+    /** @var ItemReflection */
+    protected $itemReflector;
+
+    /** @var ActivityLogging */
+    private $activityLogging;
+
+    private $activityLogReflector;
+
     protected function setUp()
     {
         parent::setUp();
+
+        ini_set("memory_limit","1G");
+        //echo "\r\033[0;32m Memory Limit\033[0m: ".ini_get("memory_limit")."\r";
+
+        ini_set('xdebug.var_display_max_depth', '10');
+        ini_set('xdebug.var_display_max_children', '256');
+        ini_set('xdebug.var_display_max_data', '1024');
+
         $this->itemManager  = new ItemManager(
             UTConfig::$dynamodbConfig, UTConfig::$tablePrefix, __DIR__ . "/cache", true
         );
         $this->itemManager2 = new ItemManager(
             UTConfig::$dynamodbConfig, UTConfig::$tablePrefix, __DIR__ . "/cache", true
         );
+
+        $this->itemReflector = new ItemReflection(User::class, null);
+        $this->activityLogReflector = new ItemReflection(ActivityLog::class, null);
+
+        /*
+        $this->activityLogging = new ActivityLogging(
+            $this->itemReflector,
+            $this->itemManager,
+            'test-changer',
+            User::class, //$this->itemReflector->getTableName(),
+            0
+        );
+        */
     }
     
     public function testPersistAndGet()
@@ -37,6 +71,7 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         $user = new User();
         $user->setId($id);
         $user->setName('Alice');
+        //print_r($user);
         $this->itemManager->persist($user);
         $this->itemManager->flush();
         
@@ -73,11 +108,12 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         
         $this->assertNull($user3);
     }
-    
+
     /**
      * @depends testPersistAndGet
      *
      * @param $id
+     * @return mixed
      */
     public function testEdit($id)
     {
@@ -119,11 +155,12 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         self::expectException(DataConsistencyException::class);
         $this->itemManager2->flush();
     }
-    
+
     /**
      * @depends testEdit
      *
      * @param $id
+     * @return
      */
     public function testCASTimestamp($id)
     {
@@ -224,11 +261,12 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         $this->itemManager->flush();
         $this->itemManager->flush();
     }
-    
+
     /**
      * @depends testCASTimestamp
      *
      * @param $id
+     * @return
      */
     public function testRefresh($id)
     {
@@ -308,11 +346,12 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         $this->expectException(ODMException::class);
         $this->itemManager->refresh($user);
     }
-    
+
     /**
      * @depends testRefresh
      *
      * @param $id
+     * @return
      */
     public function testDetach($id)
     {
@@ -509,7 +548,7 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
     public function testGetWithAttributeKey()
     {
         self::expectException(ODMException::class);
-        $this->itemManager->get(User::class, ['uid' => 10]);
+        $this->itemManager->get(User::class, ['id' => 10]);
     }
     
     public function testQueryWithAttributeKey()
@@ -620,4 +659,52 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         $this->expectException(ODMException::class);
         $this->itemManager->flush();
     }
+
+    /**
+     * @author Derek Boerger <derek.boerger@mcnhealthcare.com>
+     */
+    public function testCanLogActivity()
+    {
+        $id = (microtime(true) * 10000);
+
+        $activityLog = new ActivityLog();
+        $activityLog->setLoggedTable('TestTable');
+        $activityLog->setId($id);
+        $activityLog->setChangedDateTime(time());
+        $activityLog->setPreviousValues(["previous_value" => "Some test previous value", "now" => strftime("%Y/%m/%d @ %H:%M:%S")]);
+        $activityLog->setChangedToValues(["changed_value" => "Some test changed to value", "now" => strftime("%Y/%m/%d @ %H:%M:%S")]);
+        $activityLog->setChangedBy("TestChangedBy".$id);
+
+        $this->itemManager->persist($activityLog);
+        $this->itemManager->flush();
+
+        $getLogById = $this->itemManager->get(ActivityLog::class, ['id' => $id]);
+
+        $this->assertEquals($activityLog, $getLogById);
+
+    }
+
+    /**
+     * @author Derek Boerger <derek.boerger@mcnhealthcare.com>
+     */
+    public function testLoggableIsEnabledOnUser()
+    {
+        $random_var   = (microtime(true) * 10000);
+        $id = 0;
+        $user = new User();
+        $user->setId($id);
+        $user->setName('Billy Bo Bob Brain '.$random_var);
+        $user->setAge(31);
+        $user->setWage(64000);
+
+        $this->itemManager->persist($user);
+        $this->itemManager->flush();
+
+        /** @var User $user2 */
+        $user2 = $this->itemManager->get(User::class, ['id' => $id]);
+
+        $this->assertEquals($user, $user2); // user object will be reused when same primary keys are used
+        $this->assertEquals('Billy Bo Bob Brain '.$random_var, $user2->getName());
+    }
 }
+

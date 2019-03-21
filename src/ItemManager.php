@@ -13,7 +13,9 @@ use Doctrine\Common\Annotations\AnnotationRegistry;
 use Doctrine\Common\Annotations\CachedReader;
 use Doctrine\Common\Cache\FilesystemCache;
 use Oasis\Mlib\ODM\Dynamodb\Exceptions\ODMException;
+use Oasis\Mlib\ODM\Dynamodb\Ut\UTConfig;
 use Symfony\Component\Finder\Finder;
+use Oasis\Mlib\ODM\Dynamodb\Annotations\ActivityLogging;
 
 class ItemManager
 {
@@ -47,11 +49,18 @@ class ItemManager
      * @var bool
      */
     protected $skipCheckAndSet = false;
-    
+
+    /** @var  */
+    private $cacheDir;
+    /** @var bool  */
+    private $isDev;
+
     public function __construct(array $dynamodbConfig, $defaultTablePrefix, $cacheDir, $isDev = true)
     {
         $this->dynamodbConfig     = $dynamodbConfig;
         $this->defaultTablePrefix = $defaultTablePrefix;
+        $this->cacheDir = $cacheDir;
+        $this->isDev = $isDev;
         
         AnnotationRegistry::registerLoader([$this, 'loadAnnotationClass']);
         
@@ -192,11 +201,12 @@ class ItemManager
     {
         return $this->dynamodbConfig;
     }
-    
+
     /**
      * @param $itemClass
      *
      * @return ItemReflection
+     * @throws \ReflectionException
      */
     public function getItemReflection($itemClass)
     {
@@ -227,20 +237,23 @@ class ItemManager
     {
         return $this->reader;
     }
-    
+
     /**
      * @param $itemClass
      *
      * @return ItemRepository
+     * @throws \ReflectionException
      */
     public function getRepository($itemClass)
     {
         if (!isset($this->repositories[$itemClass])) {
             $reflection                     = $this->getItemReflection($itemClass);
             $repoClass                      = $reflection->getRepositoryClass();
+            $activityLoggingDetails         = new ActivityLoggingDetails();
             $repo                           = new $repoClass(
                 $reflection,
-                $this
+                $this,
+                $activityLoggingDetails
             );
             $this->repositories[$itemClass] = $repo;
         }
@@ -266,5 +279,49 @@ class ItemManager
     {
         $this->reservedAttributeNames = $reservedAttributeNames;
     }
-    
+
+    /**
+     * Check Loggable
+     *
+     * Check if the entity being passed has the annotation for Activity Logging and is enabled
+     *
+     * @see https://www.doctrine-project.org/projects/doctrine-annotations/en/1.6/custom.html
+     *
+     * @param $entity
+     * @return bool
+     * @throws \Doctrine\Common\Annotations\AnnotationException
+     * @throws \ReflectionException
+     */
+    public function checkLoggable($entity)
+    {
+        $refClass = new \ReflectionClass($entity);
+        $reader = new AnnotationReader();
+
+        $classAnnotations =  $reader->getClassAnnotations($refClass);
+
+        $i = 0;
+        foreach ($classAnnotations as $annot) {
+            if ($annot instanceof ActivityLogging) {
+                return $annot->enable;
+            }
+            $i++;
+        }
+        return false;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCacheDir()
+    {
+        return $this->cacheDir;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isDev(): bool
+    {
+        return $this->isDev;
+    }
 }
