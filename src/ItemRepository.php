@@ -922,9 +922,11 @@ class ItemRepository
      *
      * Logs the activity of a specific table and places that into another logging table
      *
+     * @author Derek Boerger <derek.boerger@mcnhealthcare.com>
+     *
      * @param $dataObj
      * @param int $offset
-     * @throws \Doctrine\Common\Annotations\AnnotationException
+     * @return bool
      * @throws \ReflectionException
      */
     public function logActivity($dataObj, int $offset = 0)
