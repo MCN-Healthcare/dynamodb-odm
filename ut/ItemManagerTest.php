@@ -660,6 +660,9 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         $this->itemManager->flush();
     }
 
+    /**
+     * @author Derek Boerger <derek.boerger@mcnhealthcare.com>
+     */
     public function testCanLogActivity()
     {
         $id = (microtime(true) * 10000);
@@ -682,7 +685,7 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @return void
+     * @author Derek Boerger <derek.boerger@mcnhealthcare.com>
      */
     public function testLoggableIsEnabledOnUser()
     {
@@ -702,23 +705,6 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals($user, $user2); // user object will be reused when same primary keys are used
         $this->assertEquals('Billy Bo Bob Brain '.$random_var, $user2->getName());
-
-        /* * /
-        $changedBy = "SomeUserChangingStuff";
-        $loggedTable = $this->itemManager->getRepository(User::class)->getTableName();
-        $offset = 0;
-
-
-        $activityLog = $this->itemManager->getRepository(User::class)->get(['id' => $id]);
-
-        //echo __METHOD__.": Activity Log: ".print_r($activityLog, true)."\r";
-
-        //$logit = $this->itemManager->getRepository(User::class)->logActivity($activityLog);
-
-
-        //$this->assertTrue(!is_null($this->itemManager->get(User::class, ['id' => $id])));
-        //$this->assertTrue(!is_null($this->itemManager->get(ActivityLog::class, ['changedBy' => $changedBy])));
-        /* */
     }
 }
 

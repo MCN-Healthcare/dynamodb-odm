@@ -495,6 +495,8 @@ class ItemRepository
     /**
      * Persist for the Activity Logger
      *
+     * @author Derek Boerger <derek.boerger@mcnhealthcare.com>
+     *
      * @param $obj
      */
     public function persistLoggable($obj)
