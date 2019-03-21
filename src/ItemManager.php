@@ -201,11 +201,12 @@ class ItemManager
     {
         return $this->dynamodbConfig;
     }
-    
+
     /**
      * @param $itemClass
      *
      * @return ItemReflection
+     * @throws \ReflectionException
      */
     public function getItemReflection($itemClass)
     {
@@ -236,11 +237,12 @@ class ItemManager
     {
         return $this->reader;
     }
-    
+
     /**
      * @param $itemClass
      *
      * @return ItemRepository
+     * @throws \ReflectionException
      */
     public function getRepository($itemClass)
     {

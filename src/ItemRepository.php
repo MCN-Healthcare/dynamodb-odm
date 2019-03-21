@@ -60,6 +60,7 @@ class ItemRepository
      * @param ItemReflection $itemReflection
      * @param ItemManager $itemManager
      * @param ActivityLoggingDetails $LoggingDetails
+     * @throws \ReflectionException
      */
     public function __construct(ItemReflection $itemReflection, ItemManager $itemManager, ActivityLoggingDetails $LoggingDetails)
     {

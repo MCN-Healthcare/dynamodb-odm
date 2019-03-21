@@ -13,8 +13,8 @@
 
 namespace Oasis\Mlib\ODM\Dynamodb;
 
-//use Oasis\Mlib\ODM\Dynamodb\Entity\ActivityLog;
-use Oasis\Mlib\ODM\Dynamodb\Ut\ActivityLog;
+use Oasis\Mlib\ODM\Dynamodb\Entity\ActivityLog;
+//use Oasis\Mlib\ODM\Dynamodb\Ut\ActivityLog;
 
 class ActivityLogging
 {
@@ -57,9 +57,10 @@ class ActivityLogging
      * ActivityLogging constructor.
      * @param ItemReflection $itemReflection
      * @param ItemManager $itemManager
-     * @param string $changedBy     - The user that is making the changes to the database being logged
-     * @param string $loggedTable   - The table that is being logged
-     * @param int $offset           - the offset from UTC in seconds
+     * @param string $changedBy - The user that is making the changes to the database being logged
+     * @param string $loggedTable - The table that is being logged
+     * @param int $offset - the offset from UTC in seconds
+     * @throws \ReflectionException
      */
     public function __construct(ItemReflection $itemReflection,
                                 ItemManager $itemManager,
@@ -134,9 +135,7 @@ class ActivityLogging
      *
      * @param $dataObj          - The Data Object that is being updated
      * @return bool
-     * @throws \Doctrine\Common\Annotations\AnnotationException
-     * @throws \ReflectionException
-     */
+     ß*/
     public function insertIntoActivityLog($dataObj)
     {
         // get the item repository
