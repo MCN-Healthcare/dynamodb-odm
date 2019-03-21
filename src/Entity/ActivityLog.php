@@ -133,7 +133,7 @@ class ActivityLog
     /**
      * @return array
      */
-    public function ßgetChangedToValues(): array
+    public function getChangedToValues(): array
     {
         return $this->changedToValues;
     }

@@ -135,7 +135,7 @@ class ActivityLogging
      *
      * @param $dataObj          - The Data Object that is being updated
      * @return bool
-     ß*/
+     */
     public function insertIntoActivityLog($dataObj)
     {
         // get the item repository
