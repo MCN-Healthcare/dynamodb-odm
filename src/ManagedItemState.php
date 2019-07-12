@@ -1,15 +1,15 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: minhao
- * Date: 2016-09-08
- * Time: 16:13
+/*
+ * This file is part AWS DynamoDB ODM.
+ * 
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
-namespace Oasis\Mlib\ODM\Dynamodb;
+namespace McnHealthcare\ODM\Dynamodb;
 
-use Oasis\Mlib\ODM\Dynamodb\Annotations\Field;
-use Oasis\Mlib\ODM\Dynamodb\Exceptions\ODMException;
+use McnHealthcare\ODM\Dynamodb\Annotations\Field;
+use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 
 class ManagedItemState
 {

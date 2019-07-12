@@ -1,24 +1,24 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: minhao
- * Date: 2016-09-18
- * Time: 21:19
+/*
+ * This file is part AWS DynamoDB ODM.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
-namespace Oasis\Mlib\ODM\Dynamodb\Annotations;
+namespace McnHealthcare\ODM\Dynamodb\Annotations;
 
 use Doctrine\Common\Annotations\Annotation\Required;
 use Oasis\Mlib\AwsWrappers\DynamoDbIndex;
 use Oasis\Mlib\AwsWrappers\DynamoDbItem;
-use Oasis\Mlib\ODM\Dynamodb\Exceptions\AnnotationParsingException;
-use Oasis\Mlib\ODM\Dynamodb\Exceptions\ODMException;
+use McnHealthcare\ODM\Dynamodb\Exceptions\AnnotationParsingException;
+use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 
 /**
  * Class Index
  *
  * @Annotation
- * @package Oasis\Mlib\ODM\Dynamodb\Annotations
+ * @package McnHealthcare\ODM\Dynamodb\Annotations
  */
 class Index
 {

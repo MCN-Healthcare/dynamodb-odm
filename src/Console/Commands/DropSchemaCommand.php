@@ -1,15 +1,15 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: minhao
- * Date: 2016-09-18
- * Time: 18:41
+/*
+ * This file is part AWS DynamoDB ODM.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
-namespace Oasis\Mlib\ODM\Dynamodb\Console\Commands;
+namespace McnHealthcare\ODM\Dynamodb\Console\Commands;
 
 use Aws\DynamoDb\Exception\DynamoDbException;
-use Oasis\Mlib\AwsWrappers\DynamoDbManager;
+use McnHealthcarAwsWrappers\DynamoDbManager;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 

@@ -1,21 +1,21 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: minhao
- * Date: 2016-09-03
- * Time: 19:13
+/*
+ * This file is part AWS DynamoDB ODM.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
-namespace Oasis\Mlib\ODM\Dynamodb;
+namespace McnHealthcare\ODM\Dynamodb;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use Doctrine\Common\Annotations\CachedReader;
 use Doctrine\Common\Cache\FilesystemCache;
-use Oasis\Mlib\ODM\Dynamodb\Exceptions\ODMException;
-use Oasis\Mlib\ODM\Dynamodb\Ut\UTConfig;
+use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
+use McnHealthcare\ODM\Dynamodb\Ut\UTConfig;
 use Symfony\Component\Finder\Finder;
-use Oasis\Mlib\ODM\Dynamodb\Annotations\ActivityLogging;
+use McnHealthcare\ODM\Dynamodb\Annotations\ActivityLogging;
 
 class ItemManager
 {

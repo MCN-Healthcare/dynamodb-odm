@@ -1,20 +1,20 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: minhao
- * Date: 2016-09-08
- * Time: 14:50
+/*
+ * This file is part AWS DynamoDB ODM.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
-namespace Oasis\Mlib\ODM\Dynamodb;
+namespace McnHealthcare\ODM\Dynamodb;
 
 use Doctrine\Common\Annotations\Reader;
-use Oasis\Mlib\ODM\Dynamodb\Annotations\Field;
-use Oasis\Mlib\ODM\Dynamodb\Annotations\Item;
-use Oasis\Mlib\ODM\Dynamodb\Annotations\PartitionedHashKey;
-use Oasis\Mlib\ODM\Dynamodb\Exceptions\AnnotationParsingException;
-use Oasis\Mlib\ODM\Dynamodb\Exceptions\NotAnnotatedException;
-use Oasis\Mlib\ODM\Dynamodb\Exceptions\ODMException;
+use McnHealthcare\ODM\Dynamodb\Annotations\Field;
+use McnHealthcare\ODM\Dynamodb\Annotations\Item;
+use McnHealthcare\ODM\Dynamodb\Annotations\PartitionedHashKey;
+use McnHealthcare\ODM\Dynamodb\Exceptions\AnnotationParsingException;
+use McnHealthcare\ODM\Dynamodb\Exceptions\NotAnnotatedException;
+use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 
 class ItemReflection
 {
