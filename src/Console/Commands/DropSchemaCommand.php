@@ -18,17 +18,17 @@ class DropSchemaCommand extends AbstractSchemaCommand
     protected function configure()
     {
         parent::configure();
-        
+
         $this->setName('odm:schema-tool:drop')
              ->setDescription('Drop the dynamodb tables');
     }
-    
+
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $classes       = $this->getManagedItemClasses();
-        $im            = $this->getItemManager();
+        $classes = $this->getManagedItemClasses();
+        $im = $this->getItemManager();
         $dynamoManager = new DynamoDbManager($this->getItemManager()->getDynamodbConfig());
-        
+
         $waits = [];
         foreach ($classes as $class => $reflection) {
             $tableName = $im->getDefaultTablePrefix() . $reflection->getTableName();
@@ -38,8 +38,7 @@ class DropSchemaCommand extends AbstractSchemaCommand
             } catch (DynamoDbException $e) {
                 if ("ResourceNotFoundException" == $e->getAwsErrorCode()) {
                     $output->writeln('<error>Table not found.</error>');
-                }
-                else {
+                } else {
                     throw $e;
                 }
             }

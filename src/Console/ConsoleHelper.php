@@ -20,12 +20,12 @@ class ConsoleHelper
      * @var ItemManager
      */
     protected $itemManager;
-    
+
     public function __construct(ItemManager $itemManager)
     {
         $this->itemManager = $itemManager;
     }
-    
+
     public function addCommands(Application $application)
     {
         $application->addCommands(
@@ -36,7 +36,7 @@ class ConsoleHelper
             ]
         );
     }
-    
+
     /**
      * @return ItemManager
      */

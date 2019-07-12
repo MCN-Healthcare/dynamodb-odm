@@ -41,38 +41,38 @@ class Item
      * @var string
      */
     public $repository;
-    
+
     /**
      * A projected item is read-only
      *
      * @var bool
      */
     public $projected = false;
-    
+
     public function __construct($values)
     {
         foreach ($values as $name => $value) {
             if (property_exists(self::class, $name)) {
-                
+
                 switch ($name) {
                     case 'primaryIndex':
-                        if (!$value instanceof Index) {
+                        if ( ! $value instanceof Index) {
                             $value = new Index($value);
                         }
                         break;
                     case 'globalSecondaryIndices':
                     case 'localSecondaryIndices':
-                        $orig  = $value;
+                        $orig = $value;
                         $value = [];
                         foreach ($orig as $indexValue) {
-                            if (!$indexValue instanceof Index) {
+                            if ( ! $indexValue instanceof Index) {
                                 $indexValue = new Index($indexValue);
                             }
                             $value[] = $indexValue;
                         }
                         break;
                 }
-                
+
                 $this->$name = $value;
             }
         }

@@ -23,10 +23,10 @@ class ItemManager
      * @var string[]
      */
     protected $possibleItemClasses = [];
-    
+
     protected $dynamodbConfig;
     protected $defaultTablePrefix;
-    
+
     /** @var  AnnotationReader */
     protected $reader;
     /**
@@ -39,43 +39,43 @@ class ItemManager
      * Maps item class to corresponding repository
      */
     protected $repositories = [];
-    
+
     /**
      * @var array
      */
     protected $reservedAttributeNames = [];
-    
+
     /**
      * @var bool
      */
     protected $skipCheckAndSet = false;
 
-    /** @var  */
+    /** @var */
     private $cacheDir;
-    /** @var bool  */
+    /** @var bool */
     private $isDev;
 
     public function __construct(array $dynamodbConfig, $defaultTablePrefix, $cacheDir, $isDev = true)
     {
-        $this->dynamodbConfig     = $dynamodbConfig;
+        $this->dynamodbConfig = $dynamodbConfig;
         $this->defaultTablePrefix = $defaultTablePrefix;
         $this->cacheDir = $cacheDir;
         $this->isDev = $isDev;
-        
+
         AnnotationRegistry::registerLoader([$this, 'loadAnnotationClass']);
-        
+
         $this->reader = new CachedReader(
             new AnnotationReader(),
             new FilesystemCache($cacheDir),
             $isDev
         );
     }
-    
+
     public function addNamespace($namespace, $srcDir)
     {
-        if (!\is_dir($srcDir)) {
+        if ( ! \is_dir($srcDir)) {
             \mwarning("Directory %s doesn't exist.", $srcDir);
-            
+
             return;
         }
         $finder = new Finder();
@@ -93,52 +93,52 @@ class ItemManager
             $this->possibleItemClasses[] = $classname;
         }
     }
-    
+
     public function addReservedAttributeNames(...$args)
     {
         foreach ($args as $arg) {
             $this->reservedAttributeNames[] = $arg;
         }
     }
-    
+
     public function clear()
     {
         foreach ($this->repositories as $itemRepository) {
             $itemRepository->clear();
         }
     }
-    
+
     public function detach($item)
     {
-        if (!is_object($item)) {
+        if ( ! is_object($item)) {
             throw new ODMException("You can only detach a managed object!");
         }
         $this->getRepository(get_class($item))->detach($item);
     }
-    
+
     public function flush()
     {
         foreach ($this->repositories as $repository) {
             $repository->flush();
         }
     }
-    
+
     public function get($itemClass, array $keys, $consistentRead = false)
     {
         $item = $this->getRepository($itemClass)->get($keys, $consistentRead);
-        
+
         return $item;
     }
-    
+
     /**
-     * @deprecated use shouldSkipCheckAndSet() instead
      * @return bool
+     * @deprecated use shouldSkipCheckAndSet() instead
      */
     public function isSkipCheckAndSet()
     {
         return $this->skipCheckAndSet;
     }
-    
+
     /**
      * @param bool $skipCheckAndSet
      */
@@ -146,38 +146,37 @@ class ItemManager
     {
         $this->skipCheckAndSet = $skipCheckAndSet;
     }
-    
+
     /**
      * @param $className
      *
-     * @internal
      * @return bool
+     * @internal
      */
     public function loadAnnotationClass($className)
     {
         if (class_exists($className)) {
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
-    
+
     public function persist($item)
     {
         $this->getRepository(get_class($item))->persist($item);
     }
-    
+
     public function refresh($item, $persistIfNotManaged = false)
     {
         $this->getRepository(get_class($item))->refresh($item, $persistIfNotManaged);
     }
-    
+
     public function remove($item)
     {
         $this->getRepository(get_class($item))->remove($item);
     }
-    
+
     /**
      * @return bool
      */
@@ -185,7 +184,7 @@ class ItemManager
     {
         return $this->skipCheckAndSet;
     }
-    
+
     /**
      * @return mixed
      */
@@ -193,7 +192,7 @@ class ItemManager
     {
         return $this->defaultTablePrefix;
     }
-    
+
     /**
      * @return array
      */
@@ -210,18 +209,17 @@ class ItemManager
      */
     public function getItemReflection($itemClass)
     {
-        if (!isset($this->itemReflections[$itemClass])) {
+        if ( ! isset($this->itemReflections[$itemClass])) {
             $reflection = new ItemReflection($itemClass, $this->reservedAttributeNames);
             $reflection->parse($this->reader);
             $this->itemReflections[$itemClass] = $reflection;
-        }
-        else {
+        } else {
             $reflection = $this->itemReflections[$itemClass];
         }
-        
+
         return $reflection;
     }
-    
+
     /**
      * @return \string[]
      */
@@ -229,7 +227,7 @@ class ItemManager
     {
         return $this->possibleItemClasses;
     }
-    
+
     /**
      * @return AnnotationReader
      */
@@ -246,24 +244,23 @@ class ItemManager
      */
     public function getRepository($itemClass)
     {
-        if (!isset($this->repositories[$itemClass])) {
-            $reflection                     = $this->getItemReflection($itemClass);
-            $repoClass                      = $reflection->getRepositoryClass();
-            $activityLoggingDetails         = new ActivityLoggingDetails();
-            $repo                           = new $repoClass(
+        if ( ! isset($this->repositories[$itemClass])) {
+            $reflection = $this->getItemReflection($itemClass);
+            $repoClass = $reflection->getRepositoryClass();
+            $activityLoggingDetails = new ActivityLoggingDetails();
+            $repo = new $repoClass(
                 $reflection,
                 $this,
                 $activityLoggingDetails
             );
             $this->repositories[$itemClass] = $repo;
-        }
-        else {
+        } else {
             $repo = $this->repositories[$itemClass];
         }
-        
+
         return $repo;
     }
-    
+
     /**
      * @return array
      */
@@ -271,7 +268,7 @@ class ItemManager
     {
         return $this->reservedAttributeNames;
     }
-    
+
     /**
      * @param array $reservedAttributeNames
      */
@@ -288,6 +285,7 @@ class ItemManager
      * @see https://www.doctrine-project.org/projects/doctrine-annotations/en/1.6/custom.html
      *
      * @param $entity
+     *
      * @return bool
      * @throws \Doctrine\Common\Annotations\AnnotationException
      * @throws \ReflectionException
@@ -297,7 +295,7 @@ class ItemManager
         $refClass = new \ReflectionClass($entity);
         $reader = new AnnotationReader();
 
-        $classAnnotations =  $reader->getClassAnnotations($refClass);
+        $classAnnotations = $reader->getClassAnnotations($refClass);
 
         $i = 0;
         foreach ($classAnnotations as $annot) {
@@ -306,6 +304,7 @@ class ItemManager
             }
             $i++;
         }
+
         return false;
     }
 

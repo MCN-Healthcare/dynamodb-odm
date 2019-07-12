@@ -13,6 +13,7 @@ use Doctrine\Common\Annotations\Annotation\Target;
 
 /**
  * Class ActivityLogging
+ *
  * @package McnHealthcare\ODM\Dynamodb\Annotations
  * @Annotation
  * @Target({"CLASS"})

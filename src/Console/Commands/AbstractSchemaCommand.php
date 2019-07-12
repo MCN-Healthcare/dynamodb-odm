@@ -17,7 +17,7 @@ abstract class AbstractSchemaCommand extends Command
 {
     /** @var  ItemManager */
     protected $itemManager;
-    
+
     /**
      * @param ItemManager $itemManager
      *
@@ -26,10 +26,10 @@ abstract class AbstractSchemaCommand extends Command
     public function withItemManager($itemManager)
     {
         $this->itemManager = $itemManager;
-        
+
         return $this;
     }
-    
+
     /**
      * @return ItemManager
      */
@@ -37,7 +37,7 @@ abstract class AbstractSchemaCommand extends Command
     {
         return $this->itemManager;
     }
-    
+
     /**
      * @return ItemReflection[]
      */
@@ -57,7 +57,7 @@ abstract class AbstractSchemaCommand extends Command
             }
             $classes[$class] = $reflection;
         }
-        
+
         return $classes;
     }
 }

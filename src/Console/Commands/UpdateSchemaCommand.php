@@ -22,7 +22,7 @@ class UpdateSchemaCommand extends AbstractSchemaCommand
     protected function configure()
     {
         parent::configure();
-        
+
         $this->setName('odm:schema-tool:update')
              ->setDescription('Update the dynamodb tables')
              ->addOption(
@@ -32,16 +32,16 @@ class UpdateSchemaCommand extends AbstractSchemaCommand
                  "dry run: prints out changes without really updating schema"
              );
     }
-    
+
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $isDryRun      = $input->getOption('dry-run');
-        $classes       = $this->getManagedItemClasses();
-        $im            = $this->getItemManager();
+        $isDryRun = $input->getOption('dry-run');
+        $classes = $this->getManagedItemClasses();
+        $im = $this->getItemManager();
         $dynamoManager = new DynamoDbManager($this->getItemManager()->getDynamodbConfig());
-        
+
         $classCreation = [];
-        $gsiChanges    = [];
+        $gsiChanges = [];
         /** @var ItemReflection $reflection */
         foreach ($classes as $class => $reflection) {
             if ($reflection->getItemDefinition()->projected) {
@@ -50,7 +50,7 @@ class UpdateSchemaCommand extends AbstractSchemaCommand
             }
             $tableName = $im->getDefaultTablePrefix() . $reflection->getTableName();
 
-            if (!$dynamoManager->listTables(sprintf("/^%s\$/", preg_quote($tableName, "/")))) {
+            if ( ! $dynamoManager->listTables(sprintf("/^%s\$/", preg_quote($tableName, "/")))) {
                 // will create
                 $classCreation[] = function () use (
                     $isDryRun,
@@ -61,10 +61,10 @@ class UpdateSchemaCommand extends AbstractSchemaCommand
                     $dynamoManager,
                     $tableName
                 ) {
-                    $itemDef          = $reflection->getItemDefinition();
-                    $attributeTypes   = $reflection->getAttributeTypes();
+                    $itemDef = $reflection->getItemDefinition();
+                    $attributeTypes = $reflection->getAttributeTypes();
                     $fieldNameMapping = $reflection->getFieldNameMapping();
-                    
+
                     $lsis = [];
                     foreach ($itemDef->localSecondaryIndices as $localSecondaryIndex) {
                         $lsis[] = $localSecondaryIndex->getDynamodbIndex($fieldNameMapping, $attributeTypes);
@@ -73,36 +73,35 @@ class UpdateSchemaCommand extends AbstractSchemaCommand
                     foreach ($itemDef->globalSecondaryIndices as $globalSecondaryIndex) {
                         $gsis[] = $globalSecondaryIndex->getDynamodbIndex($fieldNameMapping, $attributeTypes);
                     }
-                    
+
                     $tableName = $im->getDefaultTablePrefix() . $reflection->getTableName();
-                    
+
                     $output->writeln("Will create table <info>$tableName</info> for class <info>$class</info> ...");
-                    
-                    if (!$isDryRun) {
+
+                    if ( ! $isDryRun) {
                         $dynamoManager->createTable(
                             $tableName,
                             $itemDef->primaryIndex->getDynamodbIndex($fieldNameMapping, $attributeTypes),
                             $lsis,
                             $gsis
                         );
-                        
+
                         $output->writeln('Created.');
                     }
-                    
+
                     return $tableName;
                 };
-            }
-            else {
+            } else {
                 // will update
                 $table = new DynamoDbTable($this->getItemManager()->getDynamodbConfig(), $tableName);
-                
-                $itemDef          = $reflection->getItemDefinition();
-                $attributeTypes   = $reflection->getAttributeTypes();
+
+                $itemDef = $reflection->getItemDefinition();
+                $attributeTypes = $reflection->getAttributeTypes();
                 $fieldNameMapping = $reflection->getFieldNameMapping();
-                
+
                 $oldPrimaryIndex = $table->getPrimaryIndex();
-                $primaryIndex    = $itemDef->primaryIndex->getDynamodbIndex($fieldNameMapping, $attributeTypes);
-                if (!$oldPrimaryIndex->equals($primaryIndex)) {
+                $primaryIndex = $itemDef->primaryIndex->getDynamodbIndex($fieldNameMapping, $attributeTypes);
+                if ( ! $oldPrimaryIndex->equals($primaryIndex)) {
                     throw new ODMException(
                         sprintf(
                             "Primary index changed, which is not possible when table is already created! [Table = %s]",
@@ -110,11 +109,11 @@ class UpdateSchemaCommand extends AbstractSchemaCommand
                         )
                     );
                 }
-                
+
                 $oldLsis = $table->getLocalSecondaryIndices();
                 foreach ($itemDef->localSecondaryIndices as $localSecondaryIndex) {
                     $idx = $localSecondaryIndex->getDynamodbIndex($fieldNameMapping, $attributeTypes);
-                    if (!isset($oldLsis[$idx->getName()])) {
+                    if ( ! isset($oldLsis[$idx->getName()])) {
                         throw new ODMException(
                             sprintf(
                                 "LSI named %s did not exist, you cannot update LSI when table is created! [Table = %s]",
@@ -122,8 +121,7 @@ class UpdateSchemaCommand extends AbstractSchemaCommand
                                 $tableName
                             )
                         );
-                    }
-                    else {
+                    } else {
                         unset($oldLsis[$idx->getName()]);
                     }
                 }
@@ -135,12 +133,12 @@ class UpdateSchemaCommand extends AbstractSchemaCommand
                         )
                     );
                 }
-                
+
                 $oldGsis = $table->getGlobalSecondaryIndices();
                 foreach ($itemDef->globalSecondaryIndices as $globalSecondaryIndex) {
                     $idx = $globalSecondaryIndex->getDynamodbIndex($fieldNameMapping, $attributeTypes);
-                    
-                    if (!isset($oldGsis[$idx->getName()])) {
+
+                    if ( ! isset($oldGsis[$idx->getName()])) {
                         // new GSI
                         $gsiChanges[] = function () use (
                             $isDryRun,
@@ -156,24 +154,22 @@ class UpdateSchemaCommand extends AbstractSchemaCommand
                                 . $idx->getName()
                                 . "] to table <info>$tableName</info> for class <info>$class</info> ..."
                             );
-                            if (!$isDryRun) {
+                            if ( ! $isDryRun) {
                                 $table->addGlobalSecondaryIndex($idx);
                                 // if there is gsi alteration, we nee to wait before continue
                                 $output->writeln("Will wait for creation of GSI " . $idx->getName() . " ...");
                                 $dynamoManager->waitForTablesToBeFullyReady($tableName, 300, 5);
                                 $output->writeln('Done.');
                             }
-                            
+
                             return $tableName;
                         };
-                    }
-                    else {
+                    } else {
                         // GSI with same name
-                        
+
                         if ($idx->equals($oldGsis[$idx->getName()])) {
                             // nothing to update
-                        }
-                        else {
+                        } else {
                             $gsiChanges[] = function () use (
                                 $isDryRun,
                                 $dynamoManager,
@@ -188,7 +184,7 @@ class UpdateSchemaCommand extends AbstractSchemaCommand
                                     . $idx->getName()
                                     . "] on table <info>$tableName</info> for class <info>$class</info> ..."
                                 );
-                                if (!$isDryRun) {
+                                if ( ! $isDryRun) {
                                     // if there is gsi alteration, we nee to wait before continue
                                     $table->deleteGlobalSecondaryIndex($idx->getName());
                                     $output->writeln("Will wait for deletion of GSI " . $idx->getName() . " ...");
@@ -202,11 +198,11 @@ class UpdateSchemaCommand extends AbstractSchemaCommand
                                     $dynamoManager->waitForTablesToBeFullyReady($tableName, 300, 5);
                                     $output->writeln('Done.');
                                 }
-                                
+
                                 return $tableName;
                             };
                         }
-                        
+
                         unset($oldGsis[$idx->getName()]);
                     }
                 }
@@ -227,29 +223,28 @@ class UpdateSchemaCommand extends AbstractSchemaCommand
                                 . $removedGsi->getName()
                                 . "] from table <info>$tableName</info> for class <info>$class</info> ..."
                             );
-                            if (!$isDryRun) {
+                            if ( ! $isDryRun) {
                                 $table->deleteGlobalSecondaryIndex($removedGsi->getName());
                                 $output->writeln("Will wait for deletion of GSI " . $removedGsi->getName() . " ...");
                                 $dynamoManager->waitForTablesToBeFullyReady($tableName, 300, 5);
                                 $output->writeln('Done.');
                             }
-                            
+
                             return $tableName;
                         };
-                        
+
                     }
                 }
             }
         }
-        
-        if (!$classCreation && !$gsiChanges) {
+
+        if ( ! $classCreation && ! $gsiChanges) {
             $output->writeln("Nothing to change.");
-        }
-        else {
+        } else {
             $waits = [];
             foreach ($classCreation as $callable) {
                 $tableName = call_user_func($callable);
-                if (!$isDryRun) {
+                if ( ! $isDryRun) {
                     $waits[] = $dynamoManager->waitForTableCreation($tableName, 60, 1, false);
                 }
             }
@@ -258,11 +253,11 @@ class UpdateSchemaCommand extends AbstractSchemaCommand
                 \GuzzleHttp\Promise\all($waits)->wait();
                 $output->writeln("Done.");
             }
-            
+
             $changedTables = [];
             foreach ($gsiChanges as $callable) {
                 $tableName = call_user_func($callable);
-                if (!$isDryRun) {
+                if ( ! $isDryRun) {
                     $changedTables[] = $tableName;
                 }
             }
