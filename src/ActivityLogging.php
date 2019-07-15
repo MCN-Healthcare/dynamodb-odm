@@ -85,7 +85,7 @@ class ActivityLogging
         $this->offset = $offset;
 
         $this->logItemManager = new ItemManager(
-            $this->itemManager->getDynamodbConfig(),
+            $this->itemManager->getDynamoDbClient(),
             $this->itemManager->getDefaultTablePrefix(),
             $this->itemManager->getCacheDir(),
             $this->itemManager->isDev()

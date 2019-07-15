@@ -203,11 +203,11 @@ class ItemManager
     }
 
     /**
-     * @return array
+     * @return DynamoDbClient
      */
-    public function getDynamodbConfig()
+    public function getDynamoDbClient(): DynamoDbClient
     {
-        return $this->dynamodbConfig;
+        return $this->dynamoDbClient;
     }
 
     /**

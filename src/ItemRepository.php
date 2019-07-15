@@ -8,8 +8,8 @@
 
 namespace McnHealthcare\ODM\Dynamodb;
 
-use McnHealthcarAwsWrappers\DynamoDbIndex;
-use McnHealthcarAwsWrappers\DynamoDbTable;
+use McnHealthcare\ODM\Dynamodb\Helpers\Index;
+use McnHealthcare\ODM\Dynamodb\Helpers\Table;
 use McnHealthcare\ODM\Dynamodb\Exceptions\DataConsistencyException;
 use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 use McnHealthcare\ODM\Dynamodb\Exceptions\UnderlyingDatabaseException;
@@ -25,8 +25,8 @@ class ItemRepository
     /** @var ActivityLoggingDetails */
     private $LoggingDetails;
 
-    /** @var  DynamoDbTable */
-    protected $dynamodbTable;
+    /** @var  Table */
+    protected $table;
 
     /**
      * @var ManagedItemState[]
@@ -35,7 +35,7 @@ class ItemRepository
     protected $itemManaged = [];
 
     /** @var string */
-    private $loggedTable;
+    private $loggedtable;
 
     /** @var string */
     private $changedBy;
@@ -44,7 +44,7 @@ class ItemRepository
     private $tableName;
 
     /** @var string */
-    private $loggableDynamodbTable;
+    private $loggabletable;
 
     /** @var ItemManager */
     private $logItemManager;
@@ -73,33 +73,33 @@ class ItemRepository
         $this->itemReflection = $itemReflection;
 
         // initialize table
-        $tableName = $itemManager->getDefaultTablePrefix() . $this->itemReflection->getTableName();
+        $tableName = $itemManager->getDefaulttablePrefix() . $this->itemReflection->gettableName();
         $this->tableName = $tableName;
 
-        $this->dynamodbTable = new DynamoDbTable(
-            $itemManager->getDynamodbConfig(),
+        $this->table = new Table(
+            $itemManager->getDynamoDbClient(),
             $tableName,
             $this->itemReflection->getAttributeTypes()
         );
-
 
         // Activity Logging
         $activityLogging = new ActivityLogging(
             $this->itemReflection,
             $this->itemManager
         );
+
         $this->logItemManager = $activityLogging->getLogItemManager();
         $this->logItemReflection = $activityLogging->getLogItemReflection();
 
-        $LoggingDetails->setLoggedTable($tableName);
-        $this->loggedTable = $LoggingDetails->getLoggedTable();
+        $LoggingDetails->setLoggedtable($tableName);
+        $this->loggedtable = $LoggingDetails->getLoggedtable();
         $this->changedBy = $LoggingDetails->getChangedBy();
         $this->LoggingDetails = $LoggingDetails;
-        $logTableName = $itemManager->getDefaultTablePrefix() . $LoggingDetails->getLogTableName();
+        $logtableName = $itemManager->getDefaulttablePrefix() . $LoggingDetails->getLogtableName();
 
-        $this->loggableDynamodbTable = new DynamoDbTable(
-            $itemManager->getDynamodbConfig(),
-            $logTableName,
+        $this->loggabletable = new Table(
+            $itemManager->getDynamoDbClient(),
+            $logtableName,
             $this->itemReflection->getAttributeTypes()
         );
     }
@@ -126,7 +126,7 @@ class ItemRepository
             }
             $groupOfTranslatedKeys[] = $translatedKeys;
         }
-        $resultSet = $this->dynamodbTable->batchGet(
+        $resultSet = $this->table->batchGet(
             $groupOfTranslatedKeys,
             $isConsistentRead,
             10,
@@ -217,7 +217,7 @@ class ItemRepository
                     $batchSetItems[] = $this->itemReflection->dehydrate($item);
                     $batchNewItemStates->push($managedItemState);
                 } else {
-                    $ret = $this->dynamodbTable->set(
+                    $ret = $this->table->set(
                         $this->itemReflection->dehydrate($item),
                         $managedItemState->getCheckConditionData()
                     );
@@ -250,7 +250,7 @@ class ItemRepository
                         $batchUpdateItemStates->push($managedItemState);
                     } else {
 
-                        $ret = $this->dynamodbTable->set(
+                        $ret = $this->table->set(
                             $this->itemReflection->dehydrate($item),
                             $managedItemState->getCheckConditionData()
                         );
@@ -264,23 +264,28 @@ class ItemRepository
                 }
             }
         }
+
         if ($batchRemovalKeys) {
-            $this->dynamodbTable->batchDelete($batchRemovalKeys);
+            $this->table->batchDelete($batchRemovalKeys);
         }
+
         if ($batchSetItems) {
-            $this->dynamodbTable->batchPut($batchSetItems);
+            $this->table->batchPut($batchSetItems);
         }
+
         /** @var ManagedItemState $managedItemState */
         // Batch Create
         foreach ($batchNewItemStates as $managedItemState) {
             $managedItemState->setState(ManagedItemState::STATE_MANAGED);
             $managedItemState->setUpdated();
         }
+
         // Batch Update
         foreach ($batchUpdateItemStates as $managedItemState) {
             $managedItemState->setState(ManagedItemState::STATE_MANAGED);
             $managedItemState->setUpdated();
         }
+
         // Delete
         foreach ($removed as $id) {
             unset($this->itemManaged[$id]);
@@ -314,11 +319,12 @@ class ItemRepository
             }
         }
 
-        $result = $this->dynamodbTable->get(
+        $result = $this->table->get(
             $translatedKeys,
             $isConsistentRead,
             $this->itemReflection->getProjectedAttributes()
         );
+
         if (is_array($result)) {
             $obj = $this->persistFetchedItemData($result);
 
@@ -367,7 +373,7 @@ class ItemRepository
             );
         }
         $fields = array_merge($this->getFieldsArray($rangeConditions), $this->getFieldsArray($filterExpression));
-        $this->dynamodbTable->multiQueryAndRun(
+        $this->table->multiQueryAndRun(
             function ($result) use ($callback) {
                 $obj = $this->persistFetchedItemData($result);
 
@@ -422,7 +428,7 @@ class ItemRepository
         }
         $fields = array_merge($this->getFieldsArray($rangeConditions), $this->getFieldsArray($filterExpression));
         $count = 0;
-        $this->dynamodbTable->multiQueryAndRun(
+        $this->table->multiQueryAndRun(
             function () use (&$count) {
                 $count++;
             },
@@ -457,12 +463,12 @@ class ItemRepository
         callable $callback,
         $conditions = '',
         array $params = [],
-        $indexName = DynamoDbIndex::PRIMARY_INDEX,
+        $indexName = Index::PRIMARY_INDEX,
         $isConsistentRead = false,
         $isAscendingOrder = true
     ) {
         $fields = $this->getFieldsArray($conditions);
-        $this->dynamodbTable->parallelScanAndRun(
+        $this->table->parallelScanAndRun(
             $parallel,
             function ($result) use ($callback) {
                 $obj = $this->persistFetchedItemData($result);
@@ -545,7 +551,7 @@ class ItemRepository
     public function query(
         $conditions,
         array $params,
-        $indexName = DynamoDbIndex::PRIMARY_INDEX,
+        $indexName = Index::PRIMARY_INDEX,
         $filterExpression = '',
         &$lastKey = null,
         $evaluationLimit = 30,
@@ -553,7 +559,7 @@ class ItemRepository
         $isAscendingOrder = true
     ) {
         $fields = array_merge($this->getFieldsArray($conditions), $this->getFieldsArray($filterExpression));
-        $results = $this->dynamodbTable->query(
+        $results = $this->table->query(
             $conditions,
             $fields,
             $params,
@@ -587,7 +593,7 @@ class ItemRepository
     public function queryAll(
         $conditions = '',
         array $params = [],
-        $indexName = DynamoDbIndex::PRIMARY_INDEX,
+        $indexName = Index::PRIMARY_INDEX,
         $filterExpression = '',
         $isConsistentRead = false,
         $isAscendingOrder = true
@@ -621,13 +627,13 @@ class ItemRepository
         callable $callback,
         $conditions = '',
         array $params = [],
-        $indexName = DynamoDbIndex::PRIMARY_INDEX,
+        $indexName = Index::PRIMARY_INDEX,
         $filterExpression = '',
         $isConsistentRead = false,
         $isAscendingOrder = true
     ) {
         $fields = array_merge($this->getFieldsArray($conditions), $this->getFieldsArray($filterExpression));
-        $this->dynamodbTable->queryAndRun(
+        $this->table->queryAndRun(
             function ($result) use ($callback) {
                 $obj = $this->persistFetchedItemData($result);
 
@@ -656,13 +662,13 @@ class ItemRepository
     public function queryCount(
         $conditions,
         array $params,
-        $indexName = DynamoDbIndex::PRIMARY_INDEX,
+        $indexName = Index::PRIMARY_INDEX,
         $filterExpression = '',
         $isConsistentRead = false
     ) {
         $fields = array_merge($this->getFieldsArray($conditions), $this->getFieldsArray($filterExpression));
 
-        return $this->dynamodbTable->queryCount(
+        return $this->table->queryCount(
             $conditions,
             $fields,
             $params,
@@ -745,7 +751,7 @@ class ItemRepository
                 },
                 '',
                 [],
-                DynamoDbIndex::PRIMARY_INDEX,
+                Index::PRIMARY_INDEX,
                 true,
                 true,
                 10
@@ -786,14 +792,14 @@ class ItemRepository
     public function scan(
         $conditions = '',
         array $params = [],
-        $indexName = DynamoDbIndex::PRIMARY_INDEX,
+        $indexName = Index::PRIMARY_INDEX,
         &$lastKey = null,
         $evaluationLimit = 30,
         $isConsistentRead = false,
         $isAscendingOrder = true
     ) {
         $fields = $this->getFieldsArray($conditions);
-        $results = $this->dynamodbTable->scan(
+        $results = $this->table->scan(
             $conditions,
             $fields,
             $params,
@@ -826,7 +832,7 @@ class ItemRepository
     public function scanAll(
         $conditions = '',
         array $params = [],
-        $indexName = DynamoDbIndex::PRIMARY_INDEX,
+        $indexName = Index::PRIMARY_INDEX,
         $isConsistentRead = false,
         $isAscendingOrder = true,
         $parallel = 1
@@ -860,7 +866,7 @@ class ItemRepository
         callable $callback,
         $conditions = '',
         array $params = [],
-        $indexName = DynamoDbIndex::PRIMARY_INDEX,
+        $indexName = Index::PRIMARY_INDEX,
         $isConsistentRead = false,
         $isAscendingOrder = true,
         $parallel = 1
@@ -874,7 +880,7 @@ class ItemRepository
         $fields = $this->getFieldsArray($conditions);
 
         if ($parallel > 1) {
-            $this->dynamodbTable->parallelScanAndRun(
+            $this->table->parallelScanAndRun(
                 $parallel,
                 $resultCallback,
                 $conditions,
@@ -886,7 +892,7 @@ class ItemRepository
                 $this->itemReflection->getProjectedAttributes()
             );
         } elseif ($parallel == 1) {
-            $this->dynamodbTable->scanAndRun(
+            $this->table->scanAndRun(
                 $resultCallback,
                 $conditions,
                 $fields,
@@ -913,13 +919,13 @@ class ItemRepository
     public function scanCount(
         $conditions = '',
         array $params = [],
-        $indexName = DynamoDbIndex::PRIMARY_INDEX,
+        $indexName = Index::PRIMARY_INDEX,
         $isConsistentRead = false,
         $parallel = 10
     ) {
         $fields = $this->getFieldsArray($conditions);
 
-        return $this->dynamodbTable->scanCount(
+        return $this->table->scanCount(
             $conditions,
             $fields,
             $params,
@@ -930,14 +936,14 @@ class ItemRepository
     }
 
     /**
-     * @return DynamoDbTable
+     * @return table
      * @deprecated  this interface might be removed any time in the future
      *
      * @internal    only for advanced user, avoid using the table client directly whenever possible.
      */
-    public function getDynamodbTable()
+    public function gettable()
     {
-        return $this->dynamodbTable;
+        return $this->table;
     }
 
 
@@ -957,7 +963,7 @@ class ItemRepository
     public function logActivity($dataObj, int $offset = 0)
     {
         $log = new ActivityLogging(
-            $this->itemReflection, $this->itemManager, $this->changedBy, $this->loggedTable, $offset
+            $this->itemReflection, $this->itemManager, $this->changedBy, $this->loggedtable, $offset
         );
 
         return $log->insertIntoActivityLog($dataObj);
@@ -1019,7 +1025,7 @@ class ItemRepository
     /**
      * @return string
      */
-    public function getTableName(): string
+    public function gettableName(): string
     {
         return $this->tableName;
     }
@@ -1027,7 +1033,7 @@ class ItemRepository
     /**
      * @param string $tableName
      */
-    public function setTableName(string $tableName): void
+    public function settableName(string $tableName): void
     {
         $this->tableName = $tableName;
     }
