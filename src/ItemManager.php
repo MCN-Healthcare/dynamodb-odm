@@ -13,9 +13,9 @@ use Doctrine\Common\Annotations\AnnotationRegistry;
 use Doctrine\Common\Annotations\CachedReader;
 use Doctrine\Common\Cache\FilesystemCache;
 use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
-use McnHealthcare\ODM\Dynamodb\Ut\UTConfig;
 use Symfony\Component\Finder\Finder;
 use McnHealthcare\ODM\Dynamodb\Annotations\ActivityLogging;
+use Aws\DynamoDb\DynamoDbClient;
 
 class ItemManager
 {
@@ -24,7 +24,11 @@ class ItemManager
      */
     protected $possibleItemClasses = [];
 
-    protected $dynamodbConfig;
+    /**
+     * @var DynamoDbClient
+     */
+    protected $dynamoDbClient;
+
     protected $defaultTablePrefix;
 
     /** @var  AnnotationReader */
@@ -52,12 +56,13 @@ class ItemManager
 
     /** @var */
     private $cacheDir;
+
     /** @var bool */
     private $isDev;
 
-    public function __construct(array $dynamodbConfig, $defaultTablePrefix, $cacheDir, $isDev = true)
+    public function __construct(DynamoDbClient $dynamoDbClient, $defaultTablePrefix, $cacheDir, $isDev = true)
     {
-        $this->dynamodbConfig = $dynamodbConfig;
+        $this->dynamoDbClient = $dynamoDbClient;
         $this->defaultTablePrefix = $defaultTablePrefix;
         $this->cacheDir = $cacheDir;
         $this->isDev = $isDev;
@@ -116,6 +121,10 @@ class ItemManager
         $this->getRepository(get_class($item))->detach($item);
     }
 
+    /**
+     * @throws \Doctrine\Common\Annotations\AnnotationException
+     * @throws \ReflectionException
+     */
     public function flush()
     {
         foreach ($this->repositories as $repository) {
