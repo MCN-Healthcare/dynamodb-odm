@@ -23,10 +23,9 @@ class Table
     protected $tableName;
     protected $attributeTypes = [];
 
-    function __construct(array $awsConfig, $tableName, $attributeTypes = [])
+    function __construct(DynamoDbClient $dbClient, $tableName, $attributeTypes = [])
     {
-        $dp                   = new AwsConfigDataProvider($awsConfig, '2012-08-10');
-        $this->dbClient       = new DynamoDbClient($dp->getConfig());
+        $this->dbClient       = $dbClient;
         $this->tableName      = $tableName;
         $this->attributeTypes = $attributeTypes;
     }
@@ -250,6 +249,7 @@ class Table
     public function get(array $keys, $is_consistent_read = false, $projectedFields = [])
     {
         $keyItem     = Item::createFromArray($keys, $this->attributeTypes);
+
         $requestArgs = [
             "TableName" => $this->tableName,
             "Key"       => $keyItem->getData(),
@@ -266,6 +266,7 @@ class Table
         if ($is_consistent_read) {
             $requestArgs["ConsistentRead"] = true;
         }
+
 
         $result = $this->dbClient->getItem($requestArgs);
         if ($result['Item']) {
@@ -299,7 +300,7 @@ class Table
                                      $rangeKeyConditions,
                                      array $fieldsMapping,
                                      array $paramsMapping,
-                                     $indexName = DynamoDbIndex::PRIMARY_INDEX,
+                                     $indexName = Index::PRIMARY_INDEX,
                                      $filterExpression = '',
                                      $evaluationLimit = 30,
                                      $isConsistentRead = false,
@@ -333,7 +334,7 @@ class Table
                                        $filterExpression = '',
                                        array $fieldsMapping = [],
                                        array $paramsMapping = [],
-                                       $indexName = DynamoDbIndex::PRIMARY_INDEX,
+                                       $indexName = Index::PRIMARY_INDEX,
                                        $isConsistentRead = false,
                                        $isAscendingOrder = true,
                                        $projectedFields = [])
@@ -360,7 +361,7 @@ class Table
     public function query($keyConditions,
                           array $fieldsMapping,
                           array $paramsMapping,
-                          $indexName = DynamoDbIndex::PRIMARY_INDEX,
+                          $indexName = Index::PRIMARY_INDEX,
                           $filterExpression = '',
                           &$lastKey = null,
                           $evaluationLimit = 30,
@@ -398,7 +399,7 @@ class Table
                                 $keyConditions,
                                 array $fieldsMapping,
                                 array $paramsMapping,
-                                $indexName = DynamoDbIndex::PRIMARY_INDEX,
+                                $indexName = Index::PRIMARY_INDEX,
                                 $filterExpression = '',
                                 $isConsistentRead = false,
                                 $isAscendingOrder = true,
@@ -440,7 +441,7 @@ class Table
     public function queryCount($keyConditions,
                                array $fieldsMapping,
                                array $paramsMapping,
-                               $indexName = DynamoDbIndex::PRIMARY_INDEX,
+                               $indexName = Index::PRIMARY_INDEX,
                                $filterExpression = '',
                                $isConsistentRead = false,
                                $isAscendingOrder = true
@@ -475,7 +476,7 @@ class Table
     public function scan($filterExpression = '',
                          array $fieldsMapping = [],
                          array $paramsMapping = [],
-                         $indexName = DynamoDbIndex::PRIMARY_INDEX,
+                         $indexName = Index::PRIMARY_INDEX,
                          &$lastKey = null,
                          $evaluationLimit = 30,
                          $isConsistentRead = false,
@@ -511,7 +512,7 @@ class Table
                                $filterExpression = '',
                                array $fieldsMapping = [],
                                array $paramsMapping = [],
-                               $indexName = DynamoDbIndex::PRIMARY_INDEX,
+                               $indexName = Index::PRIMARY_INDEX,
                                $isConsistentRead = false,
                                $isAscendingOrder = true,
                                $projectedFields = [])
@@ -551,7 +552,7 @@ class Table
     public function scanCount($filterExpression = '',
                               array $fieldsMapping = [],
                               array $paramsMapping = [],
-                              $indexName = DynamoDbIndex::PRIMARY_INDEX,
+                              $indexName = Index::PRIMARY_INDEX,
                               $isConsistentRead = false,
                               $parallel = 10
     )
@@ -611,6 +612,10 @@ class Table
         $item                = Item::createFromArray($obj, $this->attributeTypes);
         $requestArgs['Item'] = $item->getData();
 
+        var_dump($obj);
+        var_dump($this->attributeTypes);
+        var_dump($requestArgs);exit();
+
         try {
             $this->dbClient->putItem($requestArgs);
         } catch (DynamoDbException $e) {
@@ -630,7 +635,7 @@ class Table
         return true;
     }
 
-    public function getConsumedCapacity($indexName = DynamoDbIndex::PRIMARY_INDEX,
+    public function getConsumedCapacity($indexName = Index::PRIMARY_INDEX,
                                         $period = 60,
                                         $num_of_period = 5,
                                         $timeshift = -300)
@@ -665,7 +670,7 @@ class Table
             "Period"     => 60,
             "Statistics" => ["Sum"],
         ];
-        if ($indexName != DynamoDbIndex::PRIMARY_INDEX) {
+        if ($indexName != Index::PRIMARY_INDEX) {
             $requestArgs['Dimensions'][] = [
                 "Name"  => "GlobalSecondaryIndexName",
                 "Value" => $indexName,
@@ -742,7 +747,7 @@ class Table
             $projectionType      = $gsiDef['Projection']['ProjectionType'];
             $projectedAttributes = isset($gsiDef['Projection']['NonKeyAttributes']) ?
                 $gsiDef['Projection']['NonKeyAttributes'] : [];
-            $gsi                 = new DynamoDbIndex(
+            $gsi                 = new Index(
                 $hashKey,
                 $hashKeyType,
                 $rangeKey,
@@ -790,7 +795,7 @@ class Table
             $projectionType      = $lsiDef['Projection']['ProjectionType'];
             $projectedAttributes = isset($lsiDef['Projection']['NonKeyAttributes']) ?
                 $lsiDef['Projection']['NonKeyAttributes'] : [];
-            $lsi                 = new DynamoDbIndex(
+            $lsi                 = new Index(
                 $hashKey,
                 $hashKeyType,
                 $rangeKey,
@@ -830,7 +835,7 @@ class Table
                     break;
             }
         }
-        $primaryIndex = new DynamoDbIndex(
+        $primaryIndex = new Index(
             $hashKey,
             $hashKeyType,
             $rangeKey,
@@ -848,10 +853,10 @@ class Table
         return $this->tableName;
     }
 
-    public function getThroughput($indexName = DynamoDbIndex::PRIMARY_INDEX)
+    public function getThroughput($indexName = Index::PRIMARY_INDEX)
     {
         $result = $this->describe();
-        if ($indexName == DynamoDbIndex::PRIMARY_INDEX) {
+        if ($indexName == Index::PRIMARY_INDEX) {
             return [
                 $result['Table']['ProvisionedThroughput']['ReadCapacityUnits'],
                 $result['Table']['ProvisionedThroughput']['WriteCapacityUnits'],
@@ -880,7 +885,7 @@ class Table
         return $this;
     }
 
-    public function setThroughput($read, $write, $indexName = DynamoDbIndex::PRIMARY_INDEX)
+    public function setThroughput($read, $write, $indexName = Index::PRIMARY_INDEX)
     {
         $requestArgs  = [
             "TableName" => $this->tableName,
@@ -889,7 +894,7 @@ class Table
             'ReadCapacityUnits'  => $read,
             'WriteCapacityUnits' => $write,
         ];
-        if ($indexName == DynamoDbIndex::PRIMARY_INDEX) {
+        if ($indexName == Index::PRIMARY_INDEX) {
             $requestArgs['ProvisionedThroughput'] = $updateObject;
         }
         else {

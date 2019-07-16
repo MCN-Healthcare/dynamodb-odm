@@ -24,7 +24,7 @@ class Item
 
     protected $data = [];
 
-    public static function createFromTypedArray(array $typed_value)
+    public static function createFromTypedArray(array $typed_value): self
     {
         $ret       = new static;
         $ret->data = $typed_value;
@@ -32,7 +32,7 @@ class Item
         return $ret;
     }
 
-    public static function createFromArray(array $normal_value, $known_types = [])
+    public static function createFromArray(array $normal_value, $known_types = []): self
     {
         $ret = new static;
         foreach ($normal_value as $k => &$v) {

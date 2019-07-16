@@ -19,7 +19,8 @@
     "require-dev" : {
         "liip/functional-test-bundle": "^3.0.0",
         "phpunit/phpunit": "^8",
-        "symfony/phpunit-bridge": "^4.3"
+        "symfony/phpunit-bridge": "^4.3",
+        "symfony/yaml": "^4.3"
     },
     "license"     : "MIT",
     "autoload"    : {
