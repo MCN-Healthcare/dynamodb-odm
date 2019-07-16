@@ -90,7 +90,7 @@ The explanation of each argument can be found below:
 
 argument        | description                   | default value
 ---             | ---                           | ---
-awsConfig       | configuration array for aws SDK, `profile` and `region` are mandatory.    | **mandatory**
+dynamoDbClient       | AWS DynamoDb Client    | **mandatory**
 tablePrefix     | a prefix to table names       | **mandatory**
 cacheDir        | cache direcotry to store metadata | **mandatory**
 isDev           | is development environment or not. Under dev environment, changes to Item class will automatically invalidate cached metadata. Under production environment, this has to be done manually.    | `true`
