@@ -1,12 +1,12 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: minhao
- * Date: 2016-09-03
- * Time: 18:00
+/*
+ * This file is part AWS DynamoDB ODM.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
-namespace Oasis\Mlib\ODM\Dynamodb\Annotations;
+namespace McnHealthcare\ODM\Dynamodb\Annotations;
 
 use Doctrine\Common\Annotations\Annotation\Required;
 use Doctrine\Common\Annotations\Annotation\Target;
@@ -41,38 +41,38 @@ class Item
      * @var string
      */
     public $repository;
-    
+
     /**
      * A projected item is read-only
      *
      * @var bool
      */
     public $projected = false;
-    
+
     public function __construct($values)
     {
         foreach ($values as $name => $value) {
             if (property_exists(self::class, $name)) {
-                
+
                 switch ($name) {
                     case 'primaryIndex':
-                        if (!$value instanceof Index) {
+                        if ( ! $value instanceof Index) {
                             $value = new Index($value);
                         }
                         break;
                     case 'globalSecondaryIndices':
                     case 'localSecondaryIndices':
-                        $orig  = $value;
+                        $orig = $value;
                         $value = [];
                         foreach ($orig as $indexValue) {
-                            if (!$indexValue instanceof Index) {
+                            if ( ! $indexValue instanceof Index) {
                                 $indexValue = new Index($indexValue);
                             }
                             $value[] = $indexValue;
                         }
                         break;
                 }
-                
+
                 $this->$name = $value;
             }
         }

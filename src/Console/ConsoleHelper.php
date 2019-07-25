@@ -1,17 +1,17 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: minhao
- * Date: 2016-09-18
- * Time: 18:05
+/*
+ * This file is part AWS DynamoDB ODM.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
-namespace Oasis\Mlib\ODM\Dynamodb\Console;
+namespace McnHealthcare\ODM\Dynamodb\Console;
 
-use Oasis\Mlib\ODM\Dynamodb\Console\Commands\CreateSchemaCommand;
-use Oasis\Mlib\ODM\Dynamodb\Console\Commands\DropSchemaCommand;
-use Oasis\Mlib\ODM\Dynamodb\Console\Commands\UpdateSchemaCommand;
-use Oasis\Mlib\ODM\Dynamodb\ItemManager;
+use McnHealthcare\ODM\Dynamodb\Console\Commands\CreateSchemaCommand;
+use McnHealthcare\ODM\Dynamodb\Console\Commands\DropSchemaCommand;
+use McnHealthcare\ODM\Dynamodb\Console\Commands\UpdateSchemaCommand;
+use McnHealthcare\ODM\Dynamodb\ItemManager;
 use Symfony\Component\Console\Application;
 
 class ConsoleHelper
@@ -20,12 +20,12 @@ class ConsoleHelper
      * @var ItemManager
      */
     protected $itemManager;
-    
+
     public function __construct(ItemManager $itemManager)
     {
         $this->itemManager = $itemManager;
     }
-    
+
     public function addCommands(Application $application)
     {
         $application->addCommands(
@@ -36,7 +36,7 @@ class ConsoleHelper
             ]
         );
     }
-    
+
     /**
      * @return ItemManager
      */

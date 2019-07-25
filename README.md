@@ -1,6 +1,11 @@
 # Object Data Mapping component for DynamoDb
 
-The oasis/dynamodb-odm is an ODM (object data mapping) library for easy use of AWS' powerful key-value database: DynamoDb.
+The mcn-healthcare/dynamodb-odm is an ODM (object data mapping) library for easy use of AWS' powerful key-value database: DynamoDb.
+
+This is a fork from: https://github.com/oasmobile/php-dynamodb-odm
+
+Majors changes at this point is this will take in the AWS DynamoDb Client Directly also the start of logging of 
+changes made at the dynamodb level
 
 > **NOTE**: this document assumes you have some understanding of what DynamoDB is and the difference between DynamoDB and traditional RDBMS (e.g. MySQL). Some terms and ideas discussed in this document are DynamoDB specific and will not be explained in this documentation. To study DynamoDB, please refer to the [official dev guide](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide)
 
@@ -10,7 +15,7 @@ The oasis/dynamodb-odm is an ODM (object data mapping) library for easy use of A
 To get oasis/dynamodb-odm, you can simple require it via `composer`:
 
 ```bash
-$ composer require oasis/dynamodb-odm
+$ composer require mcn-healthcare/dynamodb-odm
 ```
 
 ##### Linux, BSD, Mac
@@ -48,20 +53,28 @@ Once you have prepared the class loading, you acquire an **ItemManager** instanc
 
 ```php
 <?php
-use Oasis\Mlib\ODM\Dynamodb\ItemManager;
+use McnHealthcare\ODM\Dynamodb\ItemManager;
 
-$awsConfig     = [
-    "profile" => "oasis-minhao",
-    "region"  => "ap-northeast-1"
-];
+$client = new \Aws\DynamoDb\DynamoDbClient(
+    [
+        'version'     => 'latest',
+        'region'      => 'us-west-2',
+        'endpoint'    => 'http://localhost:8000',
+        'credentials' => [
+            'key'    => 'my-access-key-id',
+            'secret' => 'my-secret-access-key',
+        ]
+    ]
+);
+
 $tablePrefix   = "odm-";
 $cacheDir      = __DIR__ . "/ut/cache";
 $isDev         = true;
-$itemNamespace = 'Oasis\Mlib\ODM\Dynamodb\Ut'; // in practice, this usually looks like: My\Root\Namespace\Items
+$itemNamespace = 'McnHealthcare\ODM\Dynamodb\Ut'; // in practice, this usually looks like: My\Root\Namespace\Items
 $itemSrcDir    = __DIR__ . "/ut"; // in practice, this usually points to src/Items directory
 
 $im = new ItemManager(
-    $awsConfig,
+    $client,
     $tablePrefix,
     $cacheDir,
     $isDev
@@ -77,7 +90,7 @@ The explanation of each argument can be found below:
 
 argument        | description                   | default value
 ---             | ---                           | ---
-awsConfig       | configuration array for aws SDK, `profile` and `region` are mandatory.    | **mandatory**
+dynamoDbClient       | AWS DynamoDb Client    | **mandatory**
 tablePrefix     | a prefix to table names       | **mandatory**
 cacheDir        | cache direcotry to store metadata | **mandatory**
 isDev           | is development environment or not. Under dev environment, changes to Item class will automatically invalidate cached metadata. Under production environment, this has to be done manually.    | `true`
@@ -99,7 +112,7 @@ You need to register your application's `ItemManager` to the console tool to mak
 
 ```php
 <?php
-use Oasis\Mlib\ODM\Dynamodb\Console\ConsoleHelper;
+use McnHealthcare\ODM\Dynamodb\Console\ConsoleHelper;
 
 // replace with file to your own project bootstrap
 require_once 'bootstrap.php';
@@ -120,8 +133,8 @@ The fundamental functionality of an ODM library is to map object models (i.e. cl
 
 ```php
 <?php
-use Oasis\Mlib\ODM\Dynamodb\Annotations\Field;
-use Oasis\Mlib\ODM\Dynamodb\Annotations\Item;
+use McnHealthcare\ODM\Dynamodb\Annotations\Field;
+use McnHealthcare\ODM\Dynamodb\Annotations\Item;
 
 /**
  * @Item(
@@ -167,7 +180,7 @@ Class annotated with the _@Item_ annotation will be managed by ItemManager. An I
 - **primaryIndex**: primary index, wich can be either an array of keys, or an [_@Index_](#index) annotation object
 - **globalSecondaryIndices**: array of global secondary indices; a global secondary index is either an array of keys, or an _@Index_ annotation object
 - **localSecondaryIndices**: array of local secondary indices; a local secondary index is either an array of keys, or an _@Index_ annotation object
-- **repository**: the repository class name; by default, `\Oasis\Mlib\ODM\Dynamodb\ItemRepository` is used
+- **repository**: the repository class name; by default, `\McnHealthcare\ODM\Dynamodb\ItemRepository` is used
 - **projected**: whether this item is projected only. _Projected Item_ is not updatable (remove action is allowed). And when reading (i.e. get/query/scan) a projected item, only attrbutes for this item will be fetched from DynamoDB.
 
 ##
@@ -294,7 +307,7 @@ class User
 }
 ```
 
-> **NOTE**: Check-and-set validation is done only when you call `ItemManger#flush()`. Failure to meet the check and set condition(s) will lead to an `Oasis\Mlib\ODM\Dynamodb\Exceptions\DataConsistencyException` being thrown.
+> **NOTE**: Check-and-set validation is done only when you call `ItemManger#flush()`. Failure to meet the check and set condition(s) will lead to an `McnHealthcare\ODM\Dynamodb\Exceptions\DataConsistencyException` being thrown.
 
 ## Working with Objects
 

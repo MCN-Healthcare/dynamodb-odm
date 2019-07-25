@@ -1,15 +1,15 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: minhao
- * Date: 2016-09-18
- * Time: 18:41
+/*
+ * This file is part AWS DynamoDB ODM.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
-namespace Oasis\Mlib\ODM\Dynamodb\Console\Commands;
+namespace McnHealthcare\ODM\Dynamodb\Console\Commands;
 
 use Aws\DynamoDb\Exception\DynamoDbException;
-use Oasis\Mlib\AwsWrappers\DynamoDbManager;
+use McnHealthcarAwsWrappers\DynamoDbManager;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -18,17 +18,17 @@ class DropSchemaCommand extends AbstractSchemaCommand
     protected function configure()
     {
         parent::configure();
-        
+
         $this->setName('odm:schema-tool:drop')
              ->setDescription('Drop the dynamodb tables');
     }
-    
+
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $classes       = $this->getManagedItemClasses();
-        $im            = $this->getItemManager();
+        $classes = $this->getManagedItemClasses();
+        $im = $this->getItemManager();
         $dynamoManager = new DynamoDbManager($this->getItemManager()->getDynamodbConfig());
-        
+
         $waits = [];
         foreach ($classes as $class => $reflection) {
             $tableName = $im->getDefaultTablePrefix() . $reflection->getTableName();
@@ -38,8 +38,7 @@ class DropSchemaCommand extends AbstractSchemaCommand
             } catch (DynamoDbException $e) {
                 if ("ResourceNotFoundException" == $e->getAwsErrorCode()) {
                     $output->writeln('<error>Table not found.</error>');
-                }
-                else {
+                } else {
                     throw $e;
                 }
             }

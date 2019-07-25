@@ -1,22 +1,12 @@
 <?php
-/**
- * @author Derek Boerger <derek.boerger@mcnhealthcare.com>
- * @license Copyright 2019 MCN Healthcare
+/*
+ * This file is part AWS DynamoDB ODM.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
- * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to the following conditions:
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
- * Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
- * WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
- * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
-namespace Oasis\Mlib\ODM\Dynamodb;
+
+namespace McnHealthcare\ODM\Dynamodb;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
@@ -24,7 +14,7 @@ use Doctrine\Common\Annotations\AnnotationRegistry;
 /**
  * Class ActivityLoggingDetails
  *
- * @package Oasis\Mlib\ODM\Dynamodb
+ * @package McnHealthcare\ODM\Dynamodb
  */
 class ActivityLoggingDetails
 {
@@ -49,17 +39,18 @@ class ActivityLoggingDetails
 
     /**
      * ActivityLoggingDetails constructor.
-     * @param string $changedBy     - The user that performed the change of the record on the table
-     * @param string $loggedTable   - The Table being logged
-     * @param int $offset           - The Timestamp Offset
-     * @param string $logTable      - the table that you're logging to
+     *
+     * @param string $changedBy   - The user that performed the change of the record on the table
+     * @param string $loggedTable - The Table being logged
+     * @param int    $offset      - The Timestamp Offset
+     * @param string $logTable    - the table that you're logging to
      */
-    public function __construct($changedBy = null,
-            string $loggedTable = null,
-            int $offset = 0,
-            string $logTable = 'ActivityLog'
-    )
-    {
+    public function __construct(
+        $changedBy = null,
+        string $loggedTable = null,
+        int $offset = 0,
+        string $logTable = 'ActivityLog'
+    ) {
         $this->changedBy = $changedBy;
         $this->loggedTable = $loggedTable;
         $this->offset = $offset;

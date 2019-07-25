@@ -1,22 +1,22 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: minhao
- * Date: 2016-09-08
- * Time: 16:13
+/*
+ * This file is part AWS DynamoDB ODM.
+ * 
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
-namespace Oasis\Mlib\ODM\Dynamodb;
+namespace McnHealthcare\ODM\Dynamodb;
 
-use Oasis\Mlib\ODM\Dynamodb\Annotations\Field;
-use Oasis\Mlib\ODM\Dynamodb\Exceptions\ODMException;
+use McnHealthcare\ODM\Dynamodb\Annotations\Field;
+use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 
 class ManagedItemState
 {
     const STATE_NEW     = 1;
     const STATE_MANAGED = 2;
     const STATE_REMOVED = 3;
-    
+
     /** @var  ItemReflection */
     protected $itemReflection;
     protected $item;
@@ -25,29 +25,28 @@ class ManagedItemState
      */
     protected $originalData;
     protected $state = self::STATE_MANAGED;
-    
+
     public function __construct(ItemReflection $itemReflection, $item, array $originalData = [])
     {
         $this->itemReflection = $itemReflection;
-        $this->item           = $item;
-        $this->originalData   = $originalData;
+        $this->item = $item;
+        $this->originalData = $originalData;
     }
-    
+
     public function hasDirtyData()
     {
         if ($this->state != self::STATE_MANAGED) {
             return false;
         }
-        
+
         $data = $this->itemReflection->dehydrate($this->item);
-        if (!$this->isDataEqual($data, $this->originalData)) {
+        if ( ! $this->isDataEqual($data, $this->originalData)) {
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
-    
+
     /**
      * @return boolean
      */
@@ -55,7 +54,7 @@ class ManagedItemState
     {
         return $this->state == self::STATE_NEW;
     }
-    
+
     /**
      * @return boolean
      */
@@ -63,22 +62,22 @@ class ManagedItemState
     {
         return $this->state == self::STATE_REMOVED;
     }
-    
+
     public function updatePartitionedHashKeys($hashFunction = null)
     {
         foreach ($this->itemReflection->getPartitionedHashKeys() as $partitionedHashKey => $def) {
-            $baseValue  = $this->itemReflection->getPropertyValue($this->item, $def->baseField);
+            $baseValue = $this->itemReflection->getPropertyValue($this->item, $def->baseField);
             $hashSource = $this->itemReflection->getPropertyValue($this->item, $def->hashField);
             if (is_callable($hashFunction)) {
                 $hashSource = call_user_func($hashFunction, $hashSource);
             }
-            $hashNumber    = hexdec(substr(md5($hashSource), 0, 8));
+            $hashNumber = hexdec(substr(md5($hashSource), 0, 8));
             $hashRemainder = dechex($hashNumber % $def->size);
-            $hashResult    = sprintf("%s-%s", $baseValue, $hashRemainder);
+            $hashResult = sprintf("%s-%s", $baseValue, $hashRemainder);
             $this->itemReflection->updateProperty($this->item, $partitionedHashKey, $hashResult);
         }
     }
-    
+
     public function updateCASTimestamps($timestampOffset = 0)
     {
         $now = time() + $timestampOffset;
@@ -88,7 +87,7 @@ class ManagedItemState
             }
         }
     }
-    
+
     /**
      * @return array
      */
@@ -96,13 +95,13 @@ class ManagedItemState
     {
         $checkValues = [];
         foreach ($this->itemReflection->getCasProperties() as $propertyName => $casType) {
-            $fieldName               = $this->itemReflection->getFieldNameByPropertyName($propertyName);
+            $fieldName = $this->itemReflection->getFieldNameByPropertyName($propertyName);
             $checkValues[$fieldName] = isset($this->originalData[$fieldName]) ? $this->originalData[$fieldName] : null;
         }
-        
+
         return $checkValues;
     }
-    
+
     /**
      * @return mixed
      */
@@ -110,7 +109,7 @@ class ManagedItemState
     {
         return $this->item;
     }
-    
+
     /**
      * @param mixed $item
      */
@@ -118,7 +117,7 @@ class ManagedItemState
     {
         $this->item = $item;
     }
-    
+
     /**
      * @return array
      */
@@ -126,7 +125,7 @@ class ManagedItemState
     {
         return $this->originalData;
     }
-    
+
     /**
      * @param array $originalData
      */
@@ -134,17 +133,16 @@ class ManagedItemState
     {
         $this->originalData = $originalData;
     }
-    
+
     public function getOriginalValue($key)
     {
         if (isset($this->originalData[$key])) {
             return $this->originalData[$key];
-        }
-        else {
+        } else {
             return null;
         }
     }
-    
+
     /**
      * @param int $state
      */
@@ -152,12 +150,12 @@ class ManagedItemState
     {
         $this->state = $state;
     }
-    
+
     public function setUpdated()
     {
         $this->originalData = $this->itemReflection->dehydrate($this->item);
     }
-    
+
     protected function isDataEqual(&$a, &$b)
     {
         // empty string is considered null in dynamodb
@@ -167,11 +165,11 @@ class ManagedItemState
         ) {
             return true;
         }
-        
+
         if (gettype($a) != gettype($b)) {
             return false;
         }
-        
+
         switch (true) {
             case (is_double($a)):
                 return "$a" == "$b";
@@ -181,14 +179,14 @@ class ManagedItemState
                     return false;
                 }
                 foreach ($a as $k => &$v) {
-                    if (!key_exists($k, $b)) {
+                    if ( ! key_exists($k, $b)) {
                         return false;
                     }
-                    if (!$this->isDataEqual($v, $b[$k])) {
+                    if ( ! $this->isDataEqual($v, $b[$k])) {
                         return false;
                     }
                 }
-                
+
                 // every $k in $a can be found in $b and is equal
                 return true;
                 break;

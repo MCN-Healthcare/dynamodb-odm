@@ -1,6 +1,6 @@
 <?php
 
-namespace Oasis\Mlib\ODM\Dynamodb\Ut;
+namespace McnHealthcare\ODM\Dynamodb\Ut;
 
 use Symfony\Component\Yaml\Yaml;
 

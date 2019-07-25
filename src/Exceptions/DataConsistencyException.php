@@ -6,7 +6,7 @@
  * Time: 17:43
  */
 
-namespace Oasis\Mlib\ODM\Dynamodb\Exceptions;
+namespace McnHealthcare\ODM\Dynamodb\Exceptions;
 
 class DataConsistencyException extends \RuntimeException
 {
