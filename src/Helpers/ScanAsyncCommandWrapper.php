@@ -78,10 +78,10 @@ class ScanAsyncCommandWrapper
             $requestArgs['ExpressionAttributeNames'] = $fieldsMapping;
         }
         if ($paramsMapping) {
-            $paramsItem                               = DynamoDbItem::createFromArray($paramsMapping);
+            $paramsItem                               = Item::createFromArray($paramsMapping);
             $requestArgs['ExpressionAttributeValues'] = $paramsItem->getData();
         }
-        if ($indexName !== DynamoDbIndex::PRIMARY_INDEX) {
+        if ($indexName !== Index::PRIMARY_INDEX) {
             $requestArgs['IndexName'] = $indexName;
         }
         if ($lastKey) {
