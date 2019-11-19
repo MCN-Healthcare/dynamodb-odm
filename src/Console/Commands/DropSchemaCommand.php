@@ -9,12 +9,19 @@
 namespace McnHealthcare\ODM\Dynamodb\Console\Commands;
 
 use Aws\DynamoDb\Exception\DynamoDbException;
-use McnHealthcarAwsWrappers\DynamoDbManager;
+use McnHealthcare\ODM\Dynamodb\Helpers\DynamoDbManager;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * Class DropSchemaCommand
+ * Console command to drop dynamodb schema.
+ */
 class DropSchemaCommand extends AbstractSchemaCommand
 {
+    /**
+     * {@inheritdoc}
+     */
     protected function configure()
     {
         parent::configure();
@@ -23,6 +30,9 @@ class DropSchemaCommand extends AbstractSchemaCommand
              ->setDescription('Drop the dynamodb tables');
     }
 
+    /**
+     * {@inheritdoc}
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $classes = $this->getManagedItemClasses();

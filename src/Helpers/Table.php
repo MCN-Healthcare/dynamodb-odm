@@ -614,7 +614,7 @@ class Table
 
         var_dump($obj);
         var_dump($this->attributeTypes);
-        var_dump($requestArgs);exit();
+        var_dump($requestArgs);
 
         try {
             $this->dbClient->putItem($requestArgs);

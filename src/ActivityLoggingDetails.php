@@ -16,7 +16,7 @@ use Doctrine\Common\Annotations\AnnotationRegistry;
  *
  * @package McnHealthcare\ODM\Dynamodb
  */
-class ActivityLoggingDetails
+class ActivityLoggingDetails implements ActivityLoggingDetailsInterface
 {
     /**
      * @var mixed
@@ -58,7 +58,7 @@ class ActivityLoggingDetails
     }
 
     /**
-     * @return mixed
+     * {@inheritdoc}
      */
     public function getLoggedTable()
     {
@@ -66,7 +66,7 @@ class ActivityLoggingDetails
     }
 
     /**
-     * @param $tableName
+     * {@inheritdoc}
      */
     public function setLoggedTable($tableName): void
     {
@@ -74,7 +74,7 @@ class ActivityLoggingDetails
     }
 
     /**
-     * @return mixed
+     * {@inheritdoc}
      */
     public function getChangedBy()
     {
@@ -82,7 +82,7 @@ class ActivityLoggingDetails
     }
 
     /**
-     * @param mixed $changedBy
+     * {@inheritdoc}
      */
     public function setChangedBy($changedBy): void
     {
@@ -90,7 +90,7 @@ class ActivityLoggingDetails
     }
 
     /**
-     * @return int
+     * {@inheritdoc}
      */
     public function getOffset(): int
     {
@@ -98,7 +98,7 @@ class ActivityLoggingDetails
     }
 
     /**
-     * @param int $offset
+     * {@inheritdoc}
      */
     public function setOffset(int $offset): void
     {
@@ -106,7 +106,7 @@ class ActivityLoggingDetails
     }
 
     /**
-     * @return string
+     * {@inheritdoc}
      */
     public function getLogTableName()
     {

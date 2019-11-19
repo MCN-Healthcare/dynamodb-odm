@@ -10,8 +10,6 @@ namespace McnHealthcare\ODM\Dynamodb;
 
 use McnHealthcare\ODM\Dynamodb\Entity\ActivityLog;
 
-//use McnHealthcare\ODM\Dynamodb\Ut\ActivityLog;
-
 /**
  * Class ActivityLogging
  *

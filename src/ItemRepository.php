@@ -14,7 +14,11 @@ use McnHealthcare\ODM\Dynamodb\Exceptions\DataConsistencyException;
 use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 use McnHealthcare\ODM\Dynamodb\Exceptions\UnderlyingDatabaseException;
 
-class ItemRepository
+/**
+ * Class ItemRepository
+ * Repository for odm entities/items.
+ */
+class ItemRepository implements ItemRepositoryInterface
 {
     /** @var  ItemManager */
     protected $itemManager;
@@ -105,10 +109,7 @@ class ItemRepository
     }
 
     /**
-     * @param      $groupOfKeys
-     * @param bool $isConsistentRead
-     *
-     * @return array
+     * {@inheritdoc}
      */
     public function batchGet($groupOfKeys, $isConsistentRead = false)
     {
@@ -146,7 +147,7 @@ class ItemRepository
     }
 
     /**
-     *
+     * {@inheritdoc}
      */
     public function clear()
     {
@@ -154,7 +155,7 @@ class ItemRepository
     }
 
     /**
-     * @param $obj
+     * {@inheritdoc}
      */
     public function detach($obj)
     {
@@ -172,8 +173,7 @@ class ItemRepository
     }
 
     /**
-     * @throws \Doctrine\Common\Annotations\AnnotationException
-     * @throws \ReflectionException
+     * {@inheritdoc}
      */
     public function flush()
     {
@@ -293,10 +293,7 @@ class ItemRepository
     }
 
     /**
-     * @param      $keys
-     * @param bool $isConsistentRead
-     *
-     * @return mixed|object|null
+     * {@inheritdoc}
      */
     public function get($keys, $isConsistentRead = false)
     {
@@ -337,17 +334,7 @@ class ItemRepository
     }
 
     /**
-     * @param callable $callback
-     * @param          $hashKey
-     * @param          $hashKeyValues
-     * @param          $rangeConditions
-     * @param array    $params
-     * @param          $indexName
-     * @param string   $filterExpression
-     * @param int      $evaluationLimit
-     * @param bool     $isConsistentRead
-     * @param bool     $isAscendingOrder
-     * @param int      $concurrency
+     * {@inheritdoc}
      */
     public function multiQueryAndRun(
         callable $callback,
@@ -395,16 +382,7 @@ class ItemRepository
     }
 
     /**
-     * @param        $hashKey
-     * @param        $hashKeyValues
-     * @param        $rangeConditions
-     * @param array  $params
-     * @param        $indexName
-     * @param string $filterExpression
-     * @param bool   $isConsistentRead
-     * @param int    $concurrency
-     *
-     * @return int
+     * {@inheritdoc}
      */
     public function multiQueryCount(
         $hashKey,
@@ -450,13 +428,7 @@ class ItemRepository
     }
 
     /**
-     * @param          $parallel
-     * @param callable $callback
-     * @param string   $conditions
-     * @param array    $params
-     * @param bool     $indexName
-     * @param bool     $isConsistentRead
-     * @param bool     $isAscendingOrder
+     * {@inheritdoc}
      */
     public function parallelScanAndRun(
         $parallel,
@@ -486,7 +458,7 @@ class ItemRepository
     }
 
     /**
-     * @param $obj
+     * {@inheritdoc}
      */
     public function persist($obj)
     {
@@ -509,12 +481,7 @@ class ItemRepository
     }
 
     /**
-     * Persist for the Activity Logger
-     *
-     * @param $obj
-     *
-     * @author Derek Boerger <derek.boerger@mcnhealthcare.com>
-     *
+     * {@inheritdoc}
      */
     public function persistLoggable($obj)
     {
@@ -537,16 +504,7 @@ class ItemRepository
     }
 
     /**
-     * @param        $conditions
-     * @param array  $params
-     * @param bool   $indexName
-     * @param string $filterExpression
-     * @param null   $lastKey
-     * @param int    $evaluationLimit
-     * @param bool   $isConsistentRead
-     * @param bool   $isAscendingOrder
-     *
-     * @return array
+     * {@inheritdoc}
      */
     public function query(
         $conditions,
@@ -581,14 +539,7 @@ class ItemRepository
     }
 
     /**
-     * @param string $conditions
-     * @param array  $params
-     * @param bool   $indexName
-     * @param string $filterExpression
-     * @param bool   $isConsistentRead
-     * @param bool   $isAscendingOrder
-     *
-     * @return \SplDoublyLinkedList
+     * {@inheritdoc}
      */
     public function queryAll(
         $conditions = '',
@@ -615,13 +566,7 @@ class ItemRepository
     }
 
     /**
-     * @param callable $callback
-     * @param string   $conditions
-     * @param array    $params
-     * @param bool     $indexName
-     * @param string   $filterExpression
-     * @param bool     $isConsistentRead
-     * @param bool     $isAscendingOrder
+     * {@inheritdoc}
      */
     public function queryAndRun(
         callable $callback,
@@ -651,13 +596,7 @@ class ItemRepository
     }
 
     /**
-     * @param        $conditions
-     * @param array  $params
-     * @param bool   $indexName
-     * @param string $filterExpression
-     * @param bool   $isConsistentRead
-     *
-     * @return array|bool|int
+     * {@inheritdoc}
      */
     public function queryCount(
         $conditions,
@@ -679,8 +618,7 @@ class ItemRepository
     }
 
     /**
-     * @param      $obj
-     * @param bool $persistIfNotManaged
+     * {@inheritdoc}
      */
     public function refresh($obj, $persistIfNotManaged = false)
     {
@@ -715,7 +653,7 @@ class ItemRepository
     }
 
     /**
-     * @param $obj
+     * {@inheritdoc}
      */
     public function remove($obj)
     {
@@ -733,8 +671,7 @@ class ItemRepository
     }
 
     /**
-     * @throws \Doctrine\Common\Annotations\AnnotationException
-     * @throws \ReflectionException
+     * {@inheritdoc}
      */
     public function removeAll()
     {
@@ -768,7 +705,7 @@ class ItemRepository
     }
 
     /**
-     * @param $keys
+     * {@inheritdoc}
      */
     public function removeById($keys)
     {
@@ -779,15 +716,7 @@ class ItemRepository
     }
 
     /**
-     * @param string $conditions
-     * @param array  $params
-     * @param bool   $indexName
-     * @param null   $lastKey
-     * @param int    $evaluationLimit
-     * @param bool   $isConsistentRead
-     * @param bool   $isAscendingOrder
-     *
-     * @return array
+     * {@inheritdoc}
      */
     public function scan(
         $conditions = '',
@@ -820,14 +749,7 @@ class ItemRepository
     }
 
     /**
-     * @param string $conditions
-     * @param array  $params
-     * @param bool   $indexName
-     * @param bool   $isConsistentRead
-     * @param bool   $isAscendingOrder
-     * @param int    $parallel
-     *
-     * @return \SplDoublyLinkedList
+     * {@inheritdoc}
      */
     public function scanAll(
         $conditions = '',
@@ -854,13 +776,7 @@ class ItemRepository
     }
 
     /**
-     * @param callable $callback
-     * @param string   $conditions
-     * @param array    $params
-     * @param bool     $indexName
-     * @param bool     $isConsistentRead
-     * @param bool     $isAscendingOrder
-     * @param int      $parallel
+     * {@inheritdoc}
      */
     public function scanAndRun(
         callable $callback,
@@ -908,13 +824,7 @@ class ItemRepository
     }
 
     /**
-     * @param string $conditions
-     * @param array  $params
-     * @param bool   $indexName
-     * @param bool   $isConsistentRead
-     * @param int    $parallel
-     *
-     * @return int
+     * {@inheritdoc}
      */
     public function scanCount(
         $conditions = '',
@@ -936,10 +846,7 @@ class ItemRepository
     }
 
     /**
-     * @return table
-     * @deprecated  this interface might be removed any time in the future
-     *
-     * @internal    only for advanced user, avoid using the table client directly whenever possible.
+     * {@inheritdoc}
      */
     public function gettable()
     {
@@ -948,17 +855,7 @@ class ItemRepository
 
 
     /**
-     * Log Activity
-     *
-     * Logs the activity of a specific table and places that into another logging table
-     *
-     * @param     $dataObj
-     * @param int $offset
-     *
-     * @return bool
-     * @throws \ReflectionException
-     * @author Derek Boerger <derek.boerger@mcnhealthcare.com>
-     *
+     * {@inheritdoc}
      */
     public function logActivity($dataObj, int $offset = 0)
     {
@@ -1023,7 +920,7 @@ class ItemRepository
     }
 
     /**
-     * @return string
+     * {@inheritdoc}
      */
     public function gettableName(): string
     {
@@ -1031,7 +928,7 @@ class ItemRepository
     }
 
     /**
-     * @param string $tableName
+     * {@inheritdoc}
      */
     public function settableName(string $tableName): void
     {

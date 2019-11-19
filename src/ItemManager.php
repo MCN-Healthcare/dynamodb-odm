@@ -16,8 +16,13 @@ use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 use Symfony\Component\Finder\Finder;
 use McnHealthcare\ODM\Dynamodb\Annotations\ActivityLogging;
 use Aws\DynamoDb\DynamoDbClient;
+use Aws\AwsClientInterface;
 
-class ItemManager
+/**
+ * Class ItemManager
+ * Entity manager for dynamodb entities/items.
+ */
+class ItemManager implements ItemManagerInterface
 {
     /**
      * @var string[]
@@ -60,8 +65,20 @@ class ItemManager
     /** @var bool */
     private $isDev;
 
-    public function __construct(DynamoDbClient $dynamoDbClient, $defaultTablePrefix, $cacheDir, $isDev = true)
-    {
+    /**
+     * Initialize instance.
+     *
+     * @param AwsClientInterface $dynamoDbClient Client for aws dynamodb api.
+     * @param string $defaultTablePrefix Default prefix for table names.
+     * @param string $cacheDir Path for directory to cache metadata.
+     * @param bool $isDev Flags development environment.
+     */
+    public function __construct(
+        AwsClientInterface $dynamoDbClient,
+        string $defaultTablePrefix,
+        string $cacheDir,
+        bool $isDev = true
+    ) {
         $this->dynamoDbClient = $dynamoDbClient;
         $this->defaultTablePrefix = $defaultTablePrefix;
         $this->cacheDir = $cacheDir;
@@ -76,6 +93,9 @@ class ItemManager
         );
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function addNamespace($namespace, $srcDir)
     {
         if ( ! \is_dir($srcDir)) {
@@ -99,6 +119,9 @@ class ItemManager
         }
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function addReservedAttributeNames(...$args)
     {
         foreach ($args as $arg) {
@@ -106,6 +129,9 @@ class ItemManager
         }
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function clear()
     {
         foreach ($this->repositories as $itemRepository) {
@@ -113,6 +139,9 @@ class ItemManager
         }
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function detach($item)
     {
         if ( ! is_object($item)) {
@@ -122,8 +151,7 @@ class ItemManager
     }
 
     /**
-     * @throws \Doctrine\Common\Annotations\AnnotationException
-     * @throws \ReflectionException
+     * {@inheritdoc}
      */
     public function flush()
     {
@@ -132,6 +160,9 @@ class ItemManager
         }
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function get($itemClass, array $keys, $consistentRead = false)
     {
         $item = $this->getRepository($itemClass)->get($keys, $consistentRead);
@@ -140,7 +171,8 @@ class ItemManager
     }
 
     /**
-     * @return bool
+     * {@inheritdoc}
+     *
      * @deprecated use shouldSkipCheckAndSet() instead
      */
     public function isSkipCheckAndSet()
@@ -149,7 +181,7 @@ class ItemManager
     }
 
     /**
-     * @param bool $skipCheckAndSet
+     * {@inheritdoc}
      */
     public function setSkipCheckAndSet($skipCheckAndSet)
     {
@@ -157,10 +189,7 @@ class ItemManager
     }
 
     /**
-     * @param $className
-     *
-     * @return bool
-     * @internal
+     * {@inheritdoc}
      */
     public function loadAnnotationClass($className)
     {
@@ -171,23 +200,32 @@ class ItemManager
         }
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function persist($item)
     {
         $this->getRepository(get_class($item))->persist($item);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function refresh($item, $persistIfNotManaged = false)
     {
         $this->getRepository(get_class($item))->refresh($item, $persistIfNotManaged);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function remove($item)
     {
         $this->getRepository(get_class($item))->remove($item);
     }
 
     /**
-     * @return bool
+     * {@inheritdoc}
      */
     public function shouldSkipCheckAndSet()
     {
@@ -195,7 +233,7 @@ class ItemManager
     }
 
     /**
-     * @return mixed
+     * {@inheritdoc}
      */
     public function getDefaultTablePrefix()
     {
@@ -203,18 +241,15 @@ class ItemManager
     }
 
     /**
-     * @return DynamoDbClient
+     * {@inheritdoc}
      */
-    public function getDynamoDbClient(): DynamoDbClient
+    public function getDynamoDbClient(): AwsClientInterface
     {
         return $this->dynamoDbClient;
     }
 
     /**
-     * @param $itemClass
-     *
-     * @return ItemReflection
-     * @throws \ReflectionException
+     * {@inheritdoc}
      */
     public function getItemReflection($itemClass)
     {
@@ -230,7 +265,7 @@ class ItemManager
     }
 
     /**
-     * @return \string[]
+     * {@inheritdoc}
      */
     public function getPossibleItemClasses()
     {
@@ -238,7 +273,7 @@ class ItemManager
     }
 
     /**
-     * @return AnnotationReader
+     * {@inheritdoc}
      */
     public function getReader()
     {
@@ -246,10 +281,7 @@ class ItemManager
     }
 
     /**
-     * @param $itemClass
-     *
-     * @return ItemRepository
-     * @throws \ReflectionException
+     * {@inheritdoc}
      */
     public function getRepository($itemClass)
     {
@@ -271,7 +303,7 @@ class ItemManager
     }
 
     /**
-     * @return array
+     * {@inheritdoc}
      */
     public function getReservedAttributeNames()
     {
@@ -279,7 +311,7 @@ class ItemManager
     }
 
     /**
-     * @param array $reservedAttributeNames
+     * {@inheritdoc}
      */
     public function setReservedAttributeNames($reservedAttributeNames)
     {
@@ -287,17 +319,7 @@ class ItemManager
     }
 
     /**
-     * Check Loggable
-     *
-     * Check if the entity being passed has the annotation for Activity Logging and is enabled
-     *
-     * @see https://www.doctrine-project.org/projects/doctrine-annotations/en/1.6/custom.html
-     *
-     * @param $entity
-     *
-     * @return bool
-     * @throws \Doctrine\Common\Annotations\AnnotationException
-     * @throws \ReflectionException
+     * {@inheritdoc}
      */
     public function checkLoggable($entity)
     {
@@ -318,7 +340,7 @@ class ItemManager
     }
 
     /**
-     * @return mixed
+     * {@inheritdoc}
      */
     public function getCacheDir()
     {
@@ -326,7 +348,7 @@ class ItemManager
     }
 
     /**
-     * @return bool
+     * {@inheritdoc}
      */
     public function isDev(): bool
     {

@@ -16,7 +16,7 @@ use McnHealthcare\ODM\Dynamodb\Exceptions\AnnotationParsingException;
 use McnHealthcare\ODM\Dynamodb\Exceptions\NotAnnotatedException;
 use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 
-class ItemReflection
+class ItemReflection implements ItemReflectionInterface
 {
     protected $itemClass;
 
@@ -60,7 +60,11 @@ class ItemReflection
      */
     protected $reservedAttributeNames;
 
+    /**
+     * @var Reader
+     */
     private $reader;
+
     /**
      * @var array
      * Activity Logging property, in the format of entity name => true/false
@@ -70,8 +74,8 @@ class ItemReflection
     /**
      * ItemReflection constructor.
      *
-     * @param $itemClass
-     * @param $reservedAttributeNames
+     * @param string $itemClass
+     * @param array $reservedAttributeNames
      */
     public function __construct($itemClass, $reservedAttributeNames)
     {
@@ -80,9 +84,7 @@ class ItemReflection
     }
 
     /**
-     * @param $obj
-     *
-     * @return array
+     * {@inheritdoc}
      */
     public function dehydrate($obj)
     {
@@ -107,10 +109,7 @@ class ItemReflection
     }
 
     /**
-     * @param array $array
-     * @param null  $obj
-     *
-     * @return object|null
+     * {@inheritdoc}
      */
     public function hydrate(array $array, $obj = null)
     {
@@ -143,11 +142,7 @@ class ItemReflection
     }
 
     /**
-     * Annotation reader of the DynamoDB entity
-     *
-     * @param Reader $reader
-     *
-     * @throws \ReflectionException
+     * {@inheritdoc}
      */
     public function parse(Reader $reader)
     {
@@ -197,10 +192,7 @@ class ItemReflection
     }
 
     /**
-     * @param $hashKeyName
-     * @param $baseValue
-     *
-     * @return array
+     * {@inheritdoc}
      */
     public function getAllPartitionedValues($hashKeyName, $baseValue)
     {
@@ -219,10 +211,7 @@ class ItemReflection
     }
 
     /**
-     * @param $obj
-     * @param $propertyName
-     *
-     * @return mixed
+     * {@inheritdoc}
      */
     public function getPropertyValue($obj, $propertyName)
     {
@@ -247,9 +236,7 @@ class ItemReflection
     }
 
     /**
-     * @param $obj
-     * @param $propertyName
-     * @param $value
+     * {@inheritdoc}
      */
     public function updateProperty($obj, $propertyName, $value)
     {
@@ -272,7 +259,7 @@ class ItemReflection
     }
 
     /**
-     * @return mixed
+     * {@inheritdoc}
      */
     public function getAttributeTypes()
     {
@@ -280,7 +267,7 @@ class ItemReflection
     }
 
     /**
-     * @return array
+     * {@inheritdoc}
      */
     public function getCasProperties()
     {
@@ -288,11 +275,7 @@ class ItemReflection
     }
 
     /**
-     * Returns field name (attribute key for dynamodb) according to property name
-     *
-     * @param $propertyName
-     *
-     * @return string
+     * {@inheritdoc}
      */
     public function getFieldNameByPropertyName($propertyName)
     {
@@ -302,7 +285,7 @@ class ItemReflection
     }
 
     /**
-     * @return array a map of property name to attribute key
+     * {@inheritdoc}
      */
     public function getFieldNameMapping()
     {
@@ -315,7 +298,7 @@ class ItemReflection
     }
 
     /**
-     * @return array
+     * {@inheritdoc}
      */
     public function getProjectedAttributes()
     {
@@ -327,7 +310,7 @@ class ItemReflection
     }
 
     /**
-     * @return mixed
+     * {@inheritdoc}
      */
     public function getItemClass()
     {
@@ -335,7 +318,7 @@ class ItemReflection
     }
 
     /**
-     * @return Item
+     * {@inheritdoc}
      */
     public function getItemDefinition()
     {
@@ -343,7 +326,7 @@ class ItemReflection
     }
 
     /**
-     * @return PartitionedHashKey[]
+     * {@inheritdoc}
      */
     public function getPartitionedHashKeys()
     {
@@ -351,9 +334,7 @@ class ItemReflection
     }
 
     /**
-     * @param $obj
-     *
-     * @return string
+     * {@inheritdoc}
      */
     public function getPrimaryIdentifier($obj)
     {
@@ -366,10 +347,7 @@ class ItemReflection
     }
 
     /**
-     * @param      $obj
-     * @param bool $asAttributeKeys
-     *
-     * @return array
+     * {@inheritdoc}
      */
     public function getPrimaryKeys($obj, $asAttributeKeys = true)
     {
@@ -402,7 +380,7 @@ class ItemReflection
     }
 
     /**
-     * @return \ReflectionClass
+     * {@inheritdoc}
      */
     public function getReflectionClass()
     {
@@ -410,7 +388,7 @@ class ItemReflection
     }
 
     /**
-     * @return string
+     * {@inheritdoc}
      */
     public function getRepositoryClass()
     {
@@ -418,7 +396,7 @@ class ItemReflection
     }
 
     /**
-     * @return string
+     * {@inheritdoc}
      */
     public function getTableName()
     {
@@ -426,7 +404,7 @@ class ItemReflection
     }
 
     /**
-     * @return array
+     * {@inheritdoc}
      */
     public function getActivityLoggingProperties()
     {

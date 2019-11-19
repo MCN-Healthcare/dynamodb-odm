@@ -8,15 +8,21 @@
 
 namespace McnHealthcare\ODM\Dynamodb\Console\Commands;
 
-use McnHealthcarAwsWrappers\DynamoDbManager;
+use McnHealthcare\ODM\Dynamodb\Helpers\DynamoDbManager;
 use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * Class CreateSchemaCommand
+ * Console command to create dynamodb schema.
+ */
 class CreateSchemaCommand extends AbstractSchemaCommand
 {
-
+    /**
+     * {@inheritdoc}
+     */
     protected function configure()
     {
         parent::configure();
@@ -32,6 +38,9 @@ class CreateSchemaCommand extends AbstractSchemaCommand
              );
     }
 
+    /**
+     * {@inheritdoc}
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $skipExisting = $input->getOption('skip-existing-table');
