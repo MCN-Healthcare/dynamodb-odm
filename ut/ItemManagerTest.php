@@ -6,16 +6,15 @@
  * Time: 20:56
  */
 
-namespace Oasis\Mlib\ODM\Dynamodb\Ut;
+namespace McnHealthcare\ODM\Dynamodb\Ut;
 
-use Oasis\Mlib\AwsWrappers\DynamoDbIndex;
-//use Oasis\Mlib\ODM\Dynamodb\Entity\ActivityLog;
-use Oasis\Mlib\ODM\Dynamodb\Exceptions\DataConsistencyException;
-use Oasis\Mlib\ODM\Dynamodb\Exceptions\ODMException;
-use Oasis\Mlib\ODM\Dynamodb\ItemManager;
-use Oasis\Mlib\ODM\Dynamodb\ActivityLogging;
-use Oasis\Mlib\ODM\Dynamodb\ItemReflection;
-use Oasis\Mlib\ODM\Dynamodb\Ut\ActivityLog;
+use McnHealthcare\ODM\Dynamodb\Helpers\Index;
+use McnHealthcare\ODM\Dynamodb\Exceptions\DataConsistencyException;
+use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
+use McnHealthcare\ODM\Dynamodb\ItemManager;
+use McnHealthcare\ODM\Dynamodb\ActivityLogging;
+use McnHealthcare\ODM\Dynamodb\ItemReflection;
+use McnHealthcare\ODM\Dynamodb\Ut\ActivityLog;
 
 
 class ItemManagerTest extends \PHPUnit_Framework_TestCase
@@ -475,7 +474,7 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
                 ':idmin' => $base,
                 ':idmax' => $base + 10,
             ],
-            DynamoDbIndex::PRIMARY_INDEX,
+            Index::PRIMARY_INDEX,
             false,
             true,
             5
@@ -539,7 +538,7 @@ class ItemManagerTest extends \PHPUnit_Framework_TestCase
         $remaining = $this->itemManager->getRepository(User::class)->scanAll(
             '',
             [],
-            DynamoDbIndex::PRIMARY_INDEX,
+            Index::PRIMARY_INDEX,
             true
         );
         $this->assertTrue($remaining->isEmpty(), json_encode($remaining));

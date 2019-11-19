@@ -11,5 +11,8 @@
         <testsuite name="basic">
             <file>ut/ItemManagerTest.php</file>
         </testsuite>
+        <testsuite name="query">
+            <directory>ut/Query</directory>
+        </testsuite>
     </testsuites>
 </phpunit>

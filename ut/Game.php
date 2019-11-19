@@ -6,12 +6,12 @@
  * Time: 11:33
  */
 
-namespace Oasis\Mlib\ODM\Dynamodb\Ut;
+namespace McnHealthcare\ODM\Dynamodb\Ut;
 
-use Oasis\Mlib\ODM\Dynamodb\Annotations\Field;
-use Oasis\Mlib\ODM\Dynamodb\Annotations\Index;
-use Oasis\Mlib\ODM\Dynamodb\Annotations\Item;
-use Oasis\Mlib\ODM\Dynamodb\Annotations\PartitionedHashKey;
+use McnHealthcare\ODM\Dynamodb\Annotations\Field;
+use McnHealthcare\ODM\Dynamodb\Annotations\Index;
+use McnHealthcare\ODM\Dynamodb\Annotations\Item;
+use McnHealthcare\ODM\Dynamodb\Annotations\PartitionedHashKey;
 
 /**
  * Class Game

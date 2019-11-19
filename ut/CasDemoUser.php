@@ -19,7 +19,7 @@ use McnHealthcare\ODM\Dynamodb\Annotations\Item;
  *     table="cas-demo-users",
  *     primaryIndex=@Index(hash="id")
  *     )
- * @package Oasis\Mlib\ODM\Dynamodb\Ut
+ * @package McnHealthcare\ODM\Dynamodb\Ut
  */
 
 class CasDemoUser

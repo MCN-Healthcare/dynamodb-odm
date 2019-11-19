@@ -6,8 +6,8 @@
  * Time: 11:08
  */
 
-use Oasis\Mlib\ODM\Dynamodb\Console\ConsoleHelper;
-use Oasis\Mlib\ODM\Dynamodb\ItemManager;
+use McnHealthcare\ODM\Dynamodb\Console\ConsoleHelper;
+use McnHealthcare\ODM\Dynamodb\ItemManager;
 use Symfony\Component\Yaml\Yaml;
 
 // replace with file to your own project bootstrap

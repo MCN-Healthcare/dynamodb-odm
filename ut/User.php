@@ -6,13 +6,13 @@
  * Time: 17:08
  */
 
-namespace Oasis\Mlib\ODM\Dynamodb\Ut;
+namespace McnHealthcare\ODM\Dynamodb\Ut;
 
-use Oasis\Mlib\ODM\Dynamodb\Annotations\ActivityLogging;
-use Oasis\Mlib\ODM\Dynamodb\Annotations\Field;
-use Oasis\Mlib\ODM\Dynamodb\Annotations\Index;
-use Oasis\Mlib\ODM\Dynamodb\Annotations\Item;
-use Oasis\Mlib\ODM\Dynamodb\Annotations\PartitionedHashKey;
+use McnHealthcare\ODM\Dynamodb\Annotations\ActivityLogging;
+use McnHealthcare\ODM\Dynamodb\Annotations\Field;
+use McnHealthcare\ODM\Dynamodb\Annotations\Index;
+use McnHealthcare\ODM\Dynamodb\Annotations\Item;
+use McnHealthcare\ODM\Dynamodb\Annotations\PartitionedHashKey;
 
 /**
  * Class User
@@ -27,7 +27,7 @@ use Oasis\Mlib\ODM\Dynamodb\Annotations\PartitionedHashKey;
  *      @Index(hash="hometownPartition", range="age", name="home-age-gsi")
  *     }
  *     )
- * @package Oasis\Mlib\ODM\Dynamodb
+ * @package McnHealthcare\ODM\Dynamodb\Ut
  */
 class User
 {

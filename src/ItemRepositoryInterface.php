@@ -377,4 +377,11 @@ interface ItemRepositoryInterface
      * @param string $tableName
      */
     public function settableName(string $tableName): void;
+
+    /**
+     * Gets a query builder for item.
+     *
+     * @return QueryInterface
+     */
+    public function getQueryBuilder(): QueryInterface;
 }

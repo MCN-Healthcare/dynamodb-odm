@@ -70,8 +70,8 @@ class ActivityLogging
      * @throws \ReflectionException
      */
     public function __construct(
-        ItemReflection $itemReflection,
-        ItemManager $itemManager,
+        ItemReflectionInterface $itemReflection,
+        ItemManagerInterface $itemManager,
         $changedBy = null,
         string $loggedTable = "",
         int $offset = 0

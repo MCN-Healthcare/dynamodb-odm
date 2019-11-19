@@ -26,7 +26,7 @@ class ManagedItemState
     protected $originalData;
     protected $state = self::STATE_MANAGED;
 
-    public function __construct(ItemReflection $itemReflection, $item, array $originalData = [])
+    public function __construct(ItemReflectionInterface $itemReflection, $item, array $originalData = [])
     {
         $this->itemReflection = $itemReflection;
         $this->item = $item;

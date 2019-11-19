@@ -410,4 +410,18 @@ class ItemReflection implements ItemReflectionInterface
     {
         return $this->activityLoggingProperties;
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getItemIndexes(): array
+    {
+        $definition = $this->getItemDefinition();
+
+        return [
+            'primary' => $definition->primaryIndex,
+            'gci' => $definition->globalSecondaryIndices,
+            'lsi' => $definition->localSecondaryIndices
+        ];
+    }
 }

@@ -1,5 +1,5 @@
 <?php
-McnHealthcare\ODM\Dynamodb;
+namespace McnHealthcare\ODM\Dynamodb;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use Aws\AwsClientInterface;

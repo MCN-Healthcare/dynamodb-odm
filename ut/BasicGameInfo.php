@@ -1,20 +1,13 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: minhao
- * Date: 23/11/2017
- * Time: 4:42 PM
- */
+namespace McnHealthcare\ODM\Dynamodb\Ut;
 
-namespace Oasis\Mlib\ODM\Dynamodb\Ut;
-
-use Oasis\Mlib\ODM\Dynamodb\Annotations\Field;
-use Oasis\Mlib\ODM\Dynamodb\Annotations\Item;
+use McnHealthcare\ODM\Dynamodb\Annotations\Field;
+use McnHealthcare\ODM\Dynamodb\Annotations\Item;
 
 /**
  * Class BasicGameInfo
  *
- * @package Oasis\Mlib\ODM\Dynamodb\Ut
+ * @package McnHealthcare\ODM\Dynamodb\Ut
  * @Item(
  *     table="games",
  *     primaryIndex={"gamecode"},
