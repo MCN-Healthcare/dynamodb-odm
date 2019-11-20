@@ -88,7 +88,6 @@ class ItemReflection implements ItemReflectionInterface
      */
     private $reader;
     /**
-    /**
      * Activity Logging property, in the format of entity name => true/false
      *
      * @var array
