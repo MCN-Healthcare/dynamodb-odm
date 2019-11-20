@@ -9,8 +9,8 @@
 namespace McnHealthcare\ODM\Dynamodb\Annotations;
 
 use Doctrine\Common\Annotations\Annotation\Required;
-use Oasis\Mlib\AwsWrappers\DynamoDbIndex;
-use Oasis\Mlib\AwsWrappers\DynamoDbItem;
+use McnHealthcare\ODM\Dynamodb\Helpers\Index as DynamoDbIndex;
+use McnHealthcare\ODM\Dynamodb\Helpers\Item;
 use McnHealthcare\ODM\Dynamodb\Exceptions\AnnotationParsingException;
 use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 
@@ -85,8 +85,8 @@ class Index
         $hashType = $attributeTypes[$hash];
         $rangeKey = $range ?: null;
         $rangeType = $range ? $attributeTypes[$range] : 'string';
-        $hashType = constant(DynamoDbItem::class . '::ATTRIBUTE_TYPE_' . strtoupper($hashType));
-        $rangeType = constant(DynamoDbItem::class . '::ATTRIBUTE_TYPE_' . strtoupper($rangeType));
+        $hashType = constant(Item::class . '::ATTRIBUTE_TYPE_' . strtoupper($hashType));
+        $rangeType = constant(Item::class . '::ATTRIBUTE_TYPE_' . strtoupper($rangeType));
         $idx = new DynamoDbIndex($hash, $hashType, $rangeKey, $rangeType);
         if ($this->name) {
             $idx->setName($this->name);

@@ -8,16 +8,20 @@
 
 use McnHealthcare\ODM\Dynamodb\Console\ConsoleHelper;
 use McnHealthcare\ODM\Dynamodb\ItemManager;
+use McnHealthcare\ODM\Dynamodb\Ut\UTConfig;
 use Symfony\Component\Yaml\Yaml;
 
 // replace with file to your own project bootstrap
 require_once __DIR__ . '/ut/bootstrap.php';
 
 // replace with your own mechanism to retrieve the item manager
-$config = Yaml::parse(file_get_contents(__DIR__ . "/ut/ut.yml"));
-$aws    = $config['dynamodb'];
+UTConfig::load();
 
-$im = new ItemManager($aws, $config['prefix'], __DIR__ . "/ut/cache");
-$im->addNamespace('Oasis\Mlib\ODM\Dynamodb\Ut', __DIR__ . "/ut");
+$im = new ItemManager(
+    UTConfig::$dynamodb,
+    UTConfig::$tablePrefix,
+    __DIR__ . "/ut/cache"
+);
+$im->addNamespace('McnHealthcare\ODM\Dynamodb\Ut', __DIR__ . "/ut");
 
 return new ConsoleHelper($im);

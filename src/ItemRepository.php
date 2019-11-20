@@ -8,6 +8,8 @@
 
 namespace McnHealthcare\ODM\Dynamodb;
 
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use McnHealthcare\ODM\Dynamodb\Helpers\Index;
 use McnHealthcare\ODM\Dynamodb\Helpers\Table;
 use McnHealthcare\ODM\Dynamodb\Exceptions\DataConsistencyException;
@@ -20,61 +22,94 @@ use McnHealthcare\ODM\Dynamodb\Exceptions\UnderlyingDatabaseException;
  */
 class ItemRepository implements ItemRepositoryInterface
 {
-    /** @var  ItemManager */
+    /**
+     * @var ItemManager
+     */
     protected $itemManager;
 
-    /** @var ItemReflection */
+    /**
+     * @var ItemReflection
+     */
     protected $itemReflection;
 
-    /** @var ActivityLoggingDetails */
-    private $LoggingDetails;
+    /**
+     * @var ActivityLoggingDetails
+     */
+    private $loggingDetails;
 
-    /** @var  Table */
+    /**
+     * @var Table
+     */
     protected $table;
 
     /**
-     * @var ManagedItemState[]
      * Maps object id to managed object
+     *
+     * @var ManagedItemState[]
      */
     protected $itemManaged = [];
 
-    /** @var string */
+    /**
+     * @var string
+     */
     private $loggedtable;
 
-    /** @var string */
+    /**
+     * @var string
+     */
     private $changedBy;
 
-    /** @var string */
+    /**
+     * @var string
+     */
     private $tableName;
 
-    /** @var string */
+    /**
+     * @var string
+     */
     private $loggabletable;
 
-    /** @var ItemManager */
+    /**
+     * @var ItemManager
+     */
     private $logItemManager;
 
-    /** @var ItemReflection */
+    /**
+     * @var ItemReflection
+     */
     private $logItemReflection;
 
-    /** @var ManagedItemState[] */
+    /**
+     * @var ManagedItemState[]
+     */
     private $itemLogManaged = [];
+
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
 
     /**
      * ItemRepository constructor.
      *
-     * @param ItemReflection         $itemReflection
-     * @param ItemManager            $itemManager
-     * @param ActivityLoggingDetails $LoggingDetails
+     * @param ItemReflection $itemReflection Item metadata.
+     * @param ItemManager $itemManager Item manager handling this repository.
+     * @param ActivityLoggingDetails $loggingDetails
+     * Who data for logging to dynamodb.
+     * @param LoggerInterface $logger
+     * For writing log entries.
      *
      * @throws \ReflectionException
      */
     public function __construct(
         ItemReflection $itemReflection,
         ItemManager $itemManager,
-        ActivityLoggingDetails $LoggingDetails
+        ActivityLoggingDetails $loggingDetails,
+        LoggerInterface $logger = null
     ) {
         $this->itemManager = $itemManager;
         $this->itemReflection = $itemReflection;
+        $this->logger = $logger ?? new NullLogger();
 
         // initialize table
         $tableName = $itemManager->getDefaulttablePrefix() . $this->itemReflection->gettableName();
@@ -83,7 +118,8 @@ class ItemRepository implements ItemRepositoryInterface
         $this->table = new Table(
             $itemManager->getDynamoDbClient(),
             $tableName,
-            $this->itemReflection->getAttributeTypes()
+            $this->itemReflection->getAttributeTypes(),
+            $this->logger
         );
 
         // Activity Logging
@@ -95,16 +131,17 @@ class ItemRepository implements ItemRepositoryInterface
         $this->logItemManager = $activityLogging->getLogItemManager();
         $this->logItemReflection = $activityLogging->getLogItemReflection();
 
-        $LoggingDetails->setLoggedtable($tableName);
-        $this->loggedtable = $LoggingDetails->getLoggedtable();
-        $this->changedBy = $LoggingDetails->getChangedBy();
-        $this->LoggingDetails = $LoggingDetails;
-        $logtableName = $itemManager->getDefaulttablePrefix() . $LoggingDetails->getLogtableName();
+        $loggingDetails->setLoggedtable($tableName);
+        $this->loggedtable = $loggingDetails->getLoggedtable();
+        $this->changedBy = $loggingDetails->getChangedBy();
+        $this->loggingDetails = $loggingDetails;
+        $logtableName = $itemManager->getDefaulttablePrefix() . $loggingDetails->getLogtableName();
 
         $this->loggabletable = new Table(
             $itemManager->getDynamoDbClient(),
             $logtableName,
-            $this->itemReflection->getAttributeTypes()
+            $this->itemReflection->getAttributeTypes(),
+            $this->logger
         );
     }
 
@@ -192,7 +229,7 @@ class ItemRepository implements ItemRepositoryInterface
             /* */
             // Activity Log - Check if the activity on the entity should be logged, and if so, write it to the logging table!
             if ($this->itemManager->checkLoggable($this->itemReflection->getItemClass())) {
-                $this->logActivity($item, $this->LoggingDetails->getOffset());
+                $this->logActivity($item, $this->loggingDetails->getOffset());
             }
 
             // Delete
@@ -622,31 +659,23 @@ class ItemRepository implements ItemRepositoryInterface
      */
     public function refresh($obj, $persistIfNotManaged = false)
     {
-        if ( ! $this->itemReflection->getReflectionClass()->isInstance($obj)) {
+        if (! $this->itemReflection->getReflectionClass()->isInstance($obj)) {
             throw new ODMException(
                 "Object refreshed is not of correct type, expected: " . $this->itemReflection->getItemClass()
             );
         }
 
-        // 2017-03-24: we can refresh something that's not managed
-        //$id = $this->itemReflection->getPrimaryIdentifier($obj);
-        //if (!isset($this->itemManaged[$id])) {
-        //    throw new ODMException("Object is not managed: " . print_r($obj, true));
-        //}
-        // end of change 2017-03-24
-
         $id = $this->itemReflection->getPrimaryIdentifier($obj);
-        if ( ! isset($this->itemManaged[$id])) {
-            if ($persistIfNotManaged) {
-                $this->itemManaged[$id] = new ManagedItemState($this->itemReflection, $obj);
-            } else {
+        if (! isset($this->itemManaged[$id])) {
+            if (! $persistIfNotManaged) {
                 throw new ODMException("Object is not managed: " . print_r($obj, true));
             }
+            $this->itemManaged[$id] = new ManagedItemState($this->itemReflection, $obj);
         }
 
         $objRefreshed = $this->get($this->itemReflection->getPrimaryKeys($obj, false), true);
 
-        if ( ! $objRefreshed && $persistIfNotManaged) {
+        if (! $objRefreshed && $persistIfNotManaged) {
             $this->itemManaged[$id]->setState(ManagedItemState::STATE_NEW);
         }
 
@@ -657,13 +686,13 @@ class ItemRepository implements ItemRepositoryInterface
      */
     public function remove($obj)
     {
-        if ( ! $this->itemReflection->getReflectionClass()->isInstance($obj)) {
+        if (! $this->itemReflection->getReflectionClass()->isInstance($obj)) {
             throw new ODMException(
                 "Object removed is not of correct type, expected: " . $this->itemReflection->getItemClass()
             );
         }
         $id = $this->itemReflection->getPrimaryIdentifier($obj);
-        if ( ! isset($this->itemManaged[$id])) {
+        if (! isset($this->itemManaged[$id])) {
             throw new ODMException("Object is not managed: " . print_r($obj, true));
         }
 
@@ -904,7 +933,8 @@ class ItemRepository implements ItemRepositoryInterface
         if (isset($this->itemManaged[$id])) {
             if ($this->itemManaged[$id]->isNew()) {
                 throw new ODMException("Conflict! Fetched remote data is also persisted. " . json_encode($resultData));
-            } elseif ($this->itemManaged[$id]->isRemoved()) {
+            }
+            if ($this->itemManaged[$id]->isRemoved()) {
                 throw new ODMException("Conflict! Fetched remote data is also removed. " . json_encode($resultData));
             }
 
@@ -933,5 +963,13 @@ class ItemRepository implements ItemRepositoryInterface
     public function settableName(string $tableName): void
     {
         $this->tableName = $tableName;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getQueryBuilder(): QueryInterface
+    {
+        return clone $this->query;
     }
 }

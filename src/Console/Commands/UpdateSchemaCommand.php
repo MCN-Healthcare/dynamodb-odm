@@ -103,7 +103,11 @@ class UpdateSchemaCommand extends AbstractSchemaCommand
                 };
             } else {
                 // will update
-                $table = new Table($this->getItemManager()->getDynamodbConfig(), $tableName);
+                $table = new Table(
+                    $this->getItemManager()->getDynamodbConfig(),
+                    $tableName,
+                    $this->logger
+                );
 
                 $itemDef = $reflection->getItemDefinition();
                 $attributeTypes = $reflection->getAttributeTypes();

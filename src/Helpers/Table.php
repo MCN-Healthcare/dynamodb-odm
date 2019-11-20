@@ -1,37 +1,75 @@
 <?php
-/*
- * This file is part AWS DynamoDB ODM.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 namespace McnHealthcare\ODM\Dynamodb\Helpers;
 
 use Aws\CloudWatch\CloudWatchClient;
 use Aws\DynamoDb\DynamoDbClient;
+use Aws\AwsClientInterface;
 use Aws\DynamoDb\Exception\DynamoDbException;
 use Aws\Result;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
+/**
+ * Class Table
+ */
 class Table
 {
-    /** @var DynamoDbClient */
+    /**
+     * @var DynamoDbClient
+     */
     protected $dbClient;
 
-    protected $config;
-
+    /**
+     * Name of table instance represents.
+     *
+     * @var string
+     */
     protected $tableName;
+
+    /**
+     * @var array
+     */
     protected $attributeTypes = [];
 
-    function __construct(DynamoDbClient $dbClient, $tableName, $attributeTypes = [])
-    {
-        $this->dbClient       = $dbClient;
-        $this->tableName      = $tableName;
+    /**
+     * For writing log entries.
+     *
+     * @var LoggerInterface
+     */
+    protected $logger;
+
+    /**
+     * Intialize instance.
+     *
+     * @param AwsClientInterface $dbClient Dynamo db client.
+     * @param string $tableName Name of table to represent.
+     * @param array $attributeTypes Are these dynamo or odm types?
+     * @param LoggerInterface $logger For writing log entries.
+     */
+    function __construct(
+        AwsClientInterface $dbClient,
+        $tableName,
+        $attributeTypes = [],
+        LoggerInterface $logger = null
+    ) {
+        $this->dbClient = $dbClient;
+        $this->tableName = $tableName;
         $this->attributeTypes = $attributeTypes;
+        $this->logger = $logger ?? new NullLogger();
     }
 
-    public function addGlobalSecondaryIndex(Index $gsi, $readCapacity = 5, $writeCapacity = 5)
-    {
+    /**
+     * Adds a global seconday index.
+     *
+     * @param Index $gs Index information.
+     * @param int $readCapacity Aws read capacity for the index.
+     * @param int $writeCapacity Aws write capacity for the index.
+     */
+    public function addGlobalSecondaryIndex(
+        Index $gsi,
+        $readCapacity = 5,
+        $writeCapacity = 5
+    ) {
         if ($this->getGlobalSecondaryIndices(sprintf("/%s/", preg_quote($gsi->getName(), "/")))) {
             throw new \RuntimeException("Global Secondary Index exists, name = " . $gsi->getName());
         }
@@ -55,22 +93,42 @@ class Table
         $this->dbClient->updateTable($args);
     }
 
-    public function batchDelete(array $objs,
-                                $concurrency = 10,
-                                $maxDelay = 15000)
-    {
+    /**
+     * Removes a list of objects.
+     *
+     * @param array $objs List of object to remove.
+     * @param int $concurrency Undocumentd.
+     * @param int $maxDelay Undocumentd.
+     */
+    public function batchDelete(
+        array $objs,
+        $concurrency = 10,
+        $maxDelay = 15000
+    ) {
         $this->doBatchWrite(false, $objs, $concurrency, false, 0, $maxDelay);
     }
 
-    public function batchGet(array $keys,
-                             $isConsistentRead = false,
-                             $concurrency = 10,
-                             $projectedFields = [],
-                             $keyIsTyped = false,
-                             $retryDelay = 0,
-                             $maxDelay = 15000
-    )
-    {
+    /**
+     * Gets a list of objects by keys.
+     *
+     * @param array $keys List of object keys.
+     * @param bool $isConsistentRead Data consistency flag.
+     * @param int $concurrency Undocumentd.
+     * @param array $projectedFields
+     * Ends up being all object fields.
+     * @param bool $keyIsTyped Undocumentd.
+     * @param int $retryDelay Undocumentd.
+     * @param int $maxDelay Undocumentd.
+     */
+    public function batchGet(
+        array $keys,
+        $isConsistentRead = false,
+        $concurrency = 10,
+        $projectedFields = [],
+        $keyIsTyped = false,
+        $retryDelay = 0,
+        $maxDelay = 15000
+    ) {
         $mappingArgs = [];
         if ($projectedFields) {
             $fieldsMapping = [];
@@ -128,29 +186,31 @@ class Table
                 $unprocessedKeys = $result['UnprocessedKeys'];
                 if (isset($unprocessedKeys[$this->tableName]["Keys"])) {
                     $currentUnprocessed = $unprocessedKeys[$this->tableName]["Keys"];
-                    mdebug("Unprocessed = %d", count($currentUnprocessed));
+                    $this->logger->debug(
+                        sprintf("Unprocessed = %d", count($currentUnprocessed))
+                    );
                     foreach ($currentUnprocessed as $action) {
                         $unprocessed[] = $action;
                     }
                 }
                 if (isset($result['Responses'][$this->tableName])) {
-                    //mdebug("%d items got.", count($result['Responses'][$this->tableName]));
                     foreach ($result['Responses'][$this->tableName] as $item) {
-                        $item        = Item::createFromTypedArray($item);
+                        $item = Item::createFromTypedArray($item);
                         $returnSet[] = $item->toArray();
                     }
                 }
-                //mdebug("Consumed = %.1f", $result['ConsumedCapacity'][0]['CapacityUnits']);
             },
             function ($e) {
-                merror("Exception got: %s!", get_class($e));
+                $this->logger->error(
+                    sprintf("Exception got: %s!", get_class($e))
+                );
                 if ($e instanceof DynamoDbException) {
-                    mtrace(
+                    $this->logger->notice(
                         $e,
-                        "Exception while batch updating dynamo db item, aws code = "
-                        . $e->getAwsErrorCode()
-                        . ", type = "
-                        . $e->getAwsErrorType()
+                        [
+                            'code' => $e->getAwsErrorCode(),
+                            'type' => $e->getAwsErrorType(),
+                        ]
                     );
                 }
                 throw $e;
@@ -159,7 +219,7 @@ class Table
 
         if ($unprocessed) {
             $retryDelay = $retryDelay ? : 925;
-            mdebug("sleeping $retryDelay ms");
+            $this->looger->debug("sleeping $retryDelay ms");
             usleep($retryDelay * 1000);
             $nextRetry = $retryDelay * 1.2;
             if ($nextRetry > $maxDelay) {
@@ -175,13 +235,23 @@ class Table
 
     }
 
-    public function batchPut(array $objs,
-                             $concurrency = 10,
-                             $maxDelay = 15000)
-    {
+    /**
+     * Inserts/updates a list of objects.
+     *
+     * @param array $objs List of object to update.
+     * @param int $concurrency Undocumentd.
+     * @param int $maxDelay Undocumentd.
+     */
+    public function batchPut(
+        array $objs,
+        $concurrency = 10,
+        $maxDelay = 15000
+    ) {
         $this->doBatchWrite(true, $objs, $concurrency, false, 0, $maxDelay);
     }
 
+    /**
+     */
     public function delete($keys)
     {
         $keyItem = Item::createFromArray($keys, $this->attributeTypes);
@@ -194,6 +264,9 @@ class Table
         $this->dbClient->deleteItem($requestArgs);
     }
 
+    /**
+     * Deletes global seconday index.
+     */
     public function deleteGlobalSecondaryIndex($indexName)
     {
         if (!$this->getGlobalSecondaryIndices(sprintf("/%s/", preg_quote($indexName, "/")))) {
@@ -213,6 +286,9 @@ class Table
         $this->dbClient->updateTable($args);
     }
 
+    /**
+     * Gets details about the represented table from aws.
+     */
     public function describe()
     {
         $requestArgs = [
@@ -223,6 +299,9 @@ class Table
         return $result['Table'];
     }
 
+    /**
+     * Turns off streaming for table.
+     */
     public function disableStream()
     {
         $args = [
@@ -234,6 +313,9 @@ class Table
         $this->dbClient->updateTable($args);
     }
 
+    /**
+     * Turns on streaming for table.
+     */
     public function enableStream($type = "NEW_AND_OLD_IMAGES")
     {
         $args = [
@@ -246,6 +328,9 @@ class Table
         $this->dbClient->updateTable($args);
     }
 
+    /**
+     * Gets an item.
+     */
     public function get(array $keys, $is_consistent_read = false, $projectedFields = [])
     {
         $keyItem     = Item::createFromArray($keys, $this->attributeTypes);
@@ -279,6 +364,9 @@ class Table
         }
     }
 
+    /**
+     * Checks streaming is enabled for represented table.
+     */
     public function isStreamEnabled(&$streamViewType = null)
     {
         $streamViewType = null;
@@ -294,21 +382,24 @@ class Table
         return $isEnabled;
     }
 
-    public function multiQueryAndRun(callable $callback,
-                                     $hashKeyName,
-                                     $hashKeyValues,
-                                     $rangeKeyConditions,
-                                     array $fieldsMapping,
-                                     array $paramsMapping,
-                                     $indexName = Index::PRIMARY_INDEX,
-                                     $filterExpression = '',
-                                     $evaluationLimit = 30,
-                                     $isConsistentRead = false,
-                                     $isAscendingOrder = true,
-                                     $concurrency = 10,
-                                     $projectedFields = []
-    )
-    {
+    /**
+     * Preform a multi-query and run a callback on each result.
+     */
+    public function multiQueryAndRun(
+        callable $callback,
+        $hashKeyName,
+        $hashKeyValues,
+        $rangeKeyConditions,
+        array $fieldsMapping,
+        array $paramsMapping,
+        $indexName = Index::PRIMARY_INDEX,
+        $filterExpression = '',
+        $evaluationLimit = 30,
+        $isConsistentRead = false,
+        $isAscendingOrder = true,
+        $concurrency = 10,
+        $projectedFields = []
+    ) {
         $wrapper = new MultiQueryCommandWrapper();
         $wrapper(
             $this->dbClient,
@@ -329,16 +420,20 @@ class Table
         );
     }
 
-    public function parallelScanAndRun($parallel,
-                                       callable $callback,
-                                       $filterExpression = '',
-                                       array $fieldsMapping = [],
-                                       array $paramsMapping = [],
-                                       $indexName = Index::PRIMARY_INDEX,
-                                       $isConsistentRead = false,
-                                       $isAscendingOrder = true,
-                                       $projectedFields = [])
-    {
+    /**
+     * Perform parllel scans and run a callback on results.
+     */
+    public function parallelScanAndRun(
+        $parallel,
+        callable $callback,
+        $filterExpression = '',
+        array $fieldsMapping = [],
+        array $paramsMapping = [],
+        $indexName = Index::PRIMARY_INDEX,
+        $isConsistentRead = false,
+        $isAscendingOrder = true,
+        $projectedFields = []
+    ) {
         $wrapper = new ParallelScanCommandWrapper();
 
         $wrapper(
@@ -358,18 +453,21 @@ class Table
         );
     }
 
-    public function query($keyConditions,
-                          array $fieldsMapping,
-                          array $paramsMapping,
-                          $indexName = Index::PRIMARY_INDEX,
-                          $filterExpression = '',
-                          &$lastKey = null,
-                          $evaluationLimit = 30,
-                          $isConsistentRead = false,
-                          $isAscendingOrder = true,
-                          $projectedFields = []
-    )
-    {
+    /**
+     * Basic aws query.
+     */
+    public function query(
+        $keyConditions,
+        array $fieldsMapping,
+        array $paramsMapping,
+        $indexName = Index::PRIMARY_INDEX,
+        $filterExpression = '',
+        &$lastKey = null,
+        $evaluationLimit = 30,
+        $isConsistentRead = false,
+        $isAscendingOrder = true,
+        $projectedFields = []
+    ) {
         $wrapper = new QueryCommandWrapper();
 
         $ret = [];
@@ -395,16 +493,20 @@ class Table
         return $ret;
     }
 
-    public function queryAndRun(callable $callback,
-                                $keyConditions,
-                                array $fieldsMapping,
-                                array $paramsMapping,
-                                $indexName = Index::PRIMARY_INDEX,
-                                $filterExpression = '',
-                                $isConsistentRead = false,
-                                $isAscendingOrder = true,
-                                $projectedFields = [])
-    {
+    /**
+     * Perform a basic aws query and run a callback on results.
+     */
+    public function queryAndRun(
+        callable $callback,
+        $keyConditions,
+        array $fieldsMapping,
+        array $paramsMapping,
+        $indexName = Index::PRIMARY_INDEX,
+        $filterExpression = '',
+        $isConsistentRead = false,
+        $isAscendingOrder = true,
+        $projectedFields = []
+    ) {
         $lastKey           = null;
         $stoppedByCallback = false;
         $wrapper           = new QueryCommandWrapper();
@@ -438,15 +540,18 @@ class Table
         } while ($lastKey != null && !$stoppedByCallback);
     }
 
-    public function queryCount($keyConditions,
-                               array $fieldsMapping,
-                               array $paramsMapping,
-                               $indexName = Index::PRIMARY_INDEX,
-                               $filterExpression = '',
-                               $isConsistentRead = false,
-                               $isAscendingOrder = true
-    )
-    {
+    /**
+     * Perform a basic aws count query.
+     */
+    public function queryCount(
+        $keyConditions,
+        array $fieldsMapping,
+        array $paramsMapping,
+        $indexName = Index::PRIMARY_INDEX,
+        $filterExpression = '',
+        $isConsistentRead = false,
+        $isAscendingOrder = true
+    ) {
         $ret     = 0;
         $lastKey = null;
         $wrapper = new QueryCommandWrapper();
@@ -473,17 +578,20 @@ class Table
         return $ret;
     }
 
-    public function scan($filterExpression = '',
-                         array $fieldsMapping = [],
-                         array $paramsMapping = [],
-                         $indexName = Index::PRIMARY_INDEX,
-                         &$lastKey = null,
-                         $evaluationLimit = 30,
-                         $isConsistentRead = false,
-                         $isAscendingOrder = true,
-                         $projectedFields = []
-    )
-    {
+    /**
+     * Perform a basic aws scan.
+     */
+    public function scan(
+        $filterExpression = '',
+        array $fieldsMapping = [],
+        array $paramsMapping = [],
+        $indexName = Index::PRIMARY_INDEX,
+        &$lastKey = null,
+        $evaluationLimit = 30,
+        $isConsistentRead = false,
+        $isAscendingOrder = true,
+        $projectedFields = []
+    ) {
         $wrapper = new ScanCommandWrapper();
 
         $ret = [];
@@ -508,15 +616,19 @@ class Table
         return $ret;
     }
 
-    public function scanAndRun(callable $callback,
-                               $filterExpression = '',
-                               array $fieldsMapping = [],
-                               array $paramsMapping = [],
-                               $indexName = Index::PRIMARY_INDEX,
-                               $isConsistentRead = false,
-                               $isAscendingOrder = true,
-                               $projectedFields = [])
-    {
+    /**
+     * Perform a basic aws scan and run a callback on results.
+     */
+    public function scanAndRun(
+        callable $callback,
+        $filterExpression = '',
+        array $fieldsMapping = [],
+        array $paramsMapping = [],
+        $indexName = Index::PRIMARY_INDEX,
+        $isConsistentRead = false,
+        $isAscendingOrder = true,
+        $projectedFields = []
+    ) {
         $lastKey           = null;
         $stoppedByCallback = false;
         $wrapper           = new ScanCommandWrapper();
@@ -549,14 +661,17 @@ class Table
         } while ($lastKey != null && !$stoppedByCallback);
     }
 
-    public function scanCount($filterExpression = '',
-                              array $fieldsMapping = [],
-                              array $paramsMapping = [],
-                              $indexName = Index::PRIMARY_INDEX,
-                              $isConsistentRead = false,
-                              $parallel = 10
-    )
-    {
+    /**
+     * Perform a basic aws count scan.
+     */
+    public function scanCount(
+        $filterExpression = '',
+        array $fieldsMapping = [],
+        array $paramsMapping = [],
+        $indexName = Index::PRIMARY_INDEX,
+        $isConsistentRead = false,
+        $parallel = 10
+    ) {
         $lastKey = null;
         $wrapper = new ParallelScanCommandWrapper();
 
@@ -578,6 +693,9 @@ class Table
         );
     }
 
+    /**
+     * Perform a put on an item.
+     */
     public function set(array $obj, $checkValues = [])
     {
         $requestArgs = [
@@ -612,22 +730,18 @@ class Table
         $item                = Item::createFromArray($obj, $this->attributeTypes);
         $requestArgs['Item'] = $item->getData();
 
-        var_dump($obj);
-        var_dump($this->attributeTypes);
-        var_dump($requestArgs);
-
         try {
             $this->dbClient->putItem($requestArgs);
         } catch (DynamoDbException $e) {
             if ($e->getAwsErrorCode() == "ConditionalCheckFailedException") {
                 return false;
             }
-            mtrace(
+            $this->logger->notice(
                 $e,
-                "Exception while setting dynamo db item, aws code = "
-                . $e->getAwsErrorCode()
-                . ", type = "
-                . $e->getAwsErrorType()
+                [
+                    'code' => $e->getAwsErrorCode(),
+                    'type' => $e->getAwsErrorType(),
+                ]
             );
             throw $e;
         }
@@ -635,15 +749,19 @@ class Table
         return true;
     }
 
-    public function getConsumedCapacity($indexName = Index::PRIMARY_INDEX,
-                                        $period = 60,
-                                        $num_of_period = 5,
-                                        $timeshift = -300)
-    {
+    /**
+     * Gets capacity stats for represented table.
+     */
+    public function getConsumedCapacity(
+        $indexName = Index::PRIMARY_INDEX,
+        $period = 60,
+        $num_of_period = 5,
+        $timeshift = -300
+    ) {
         $cloudwatch = new CloudWatchClient(
             [
-                "profile" => $this->config['profile'],
-                "region"  => $this->config['region'],
+                "profile" => $this->dbClient->getConfig('profile'),
+                "region"  => $this->dbClient->getConfig('region'),
                 "version" => "2010-08-01",
             ]
         );
@@ -659,10 +777,6 @@ class Table
                     "Name"  => "TableName",
                     "Value" => $this->tableName,
                 ],
-                //[
-                //    "Name"  => "Operation",
-                //    "Value" => "GetItem",
-                //],
             ],
             "MetricName" => "ConsumedReadCapacityUnits",
             "StartTime"  => date('c', $start),
@@ -710,6 +824,9 @@ class Table
         return $this->dbClient;
     }
 
+    /**
+     * Gets information for the table's global seconday indexes.
+     */
     public function getGlobalSecondaryIndices($namePattern = "/.*/")
     {
         $description = $this->describe();
@@ -762,6 +879,9 @@ class Table
         return $gsis;
     }
 
+    /**
+     * Gets information for the table's local seconday indexes.
+     */
     public function getLocalSecondaryIndices()
     {
         $description = $this->describe();
@@ -810,6 +930,9 @@ class Table
         return $lsis;
     }
 
+    /**
+     * Gets information for the table's primary index.
+     */
     public function getPrimaryIndex()
     {
         $description = $this->describe();
@@ -846,13 +969,18 @@ class Table
     }
 
     /**
-     * @return mixed
+     * Gets name of represented table.
+     *
+     * @return string
      */
     public function getTableName()
     {
         return $this->tableName;
     }
 
+    /**
+     * Gets capacity information for the represented table.
+     */
     public function getThroughput($indexName = Index::PRIMARY_INDEX)
     {
         $result = $this->describe();
@@ -878,6 +1006,9 @@ class Table
         throw new \UnexpectedValueException("Cannot find index named $indexName");
     }
 
+    /**
+     * Adds or changes an attribute.
+     */
     public function setAttributeType($name, $type)
     {
         $this->attributeTypes[$name] = $type;
@@ -885,6 +1016,9 @@ class Table
         return $this;
     }
 
+    /**
+     * Sets capacity for an index.
+     */
     public function setThroughput($read, $write, $indexName = Index::PRIMARY_INDEX)
     {
         $requestArgs  = [
@@ -915,7 +1049,9 @@ class Table
                 && $e->getAwsErrorType() == "client"
                 && !$e->isConnectionError()
             ) {
-                mwarning("Throughput not updated, because new value is identical to old value!");
+                $this->logger->warning(
+                    "Throughput not updated, because new value is identical to old value!"
+                );
             }
             else {
                 throw $e;
@@ -923,13 +1059,17 @@ class Table
         }
     }
 
-    protected function doBatchWrite($isPut,
-                                    array $objs,
-                                    $concurrency = 10,
-                                    $objIsTyped = false,
-                                    $retryDelay = 0,
-                                    $maxDelay = 15000)
-    {
+    /**
+     * Performs a put or delete for a list of objects.
+     */
+    protected function doBatchWrite(
+        $isPut,
+        array $objs,
+        $concurrency = 10,
+        $objIsTyped = false,
+        $retryDelay = 0,
+        $maxDelay = 15000
+    ) {
         $promises    = [];
         $writes      = [];
         $unprocessed = [];
@@ -976,7 +1116,9 @@ class Table
                 $unprocessedItems = $result['UnprocessedItems'];
                 if (isset($unprocessedItems[$this->tableName])) {
                     $currentUnprocessed = $unprocessedItems[$this->tableName];
-                    mdebug("Unprocessed = %d", count($currentUnprocessed));
+                    $this->logger->debug(
+                        sprintf("Unprocessed = %d", count($currentUnprocessed))
+                    );
                     foreach ($currentUnprocessed as $action) {
                         if ($isPut) {
                             $unprocessed[] = $action['PutRequest']['Item'];
@@ -988,14 +1130,16 @@ class Table
                 }
             },
             function ($e) {
-                merror("Exception got: %s!", get_class($e));
+                $this->logger->error(
+                    sprintf("Exception got: %s!", get_class($e))
+                );
                 if ($e instanceof DynamoDbException) {
-                    mtrace(
+                    $this->logger->notice(
                         $e,
-                        "Exception while batch updating dynamo db item, aws code = "
-                        . $e->getAwsErrorCode()
-                        . ", type = "
-                        . $e->getAwsErrorType()
+                        [
+                            'code' => $e->getAwsErrorCode(),
+                            'type' => $e->getAwsErrorType(),
+                        ]
                     );
                 }
                 throw $e;
@@ -1008,7 +1152,7 @@ class Table
             if ($nextRetry > $maxDelay) {
                 $nextRetry = $maxDelay;
             }
-            mdebug("sleeping $retryDelay ms");
+            $this->logger->debug("sleeping $retryDelay ms");
             usleep($retryDelay * 1000);
             $this->doBatchWrite($isPut, $unprocessed, $concurrency, true, $nextRetry);
         }

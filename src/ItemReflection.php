@@ -15,59 +15,83 @@ use McnHealthcare\ODM\Dynamodb\Annotations\PartitionedHashKey;
 use McnHealthcare\ODM\Dynamodb\Exceptions\AnnotationParsingException;
 use McnHealthcare\ODM\Dynamodb\Exceptions\NotAnnotatedException;
 use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
+/**
+ * Class ItemReflection
+ * Item metadata handling.
+ */
 class ItemReflection implements ItemReflectionInterface
 {
+    /**
+     * @var string
+     */
     protected $itemClass;
-
-    /** @var  \ReflectionClass */
+    /**
+     * @var \ReflectionClass
+     */
     protected $reflectionClass;
-    /** @var  Item */
+    /**
+     * @var Item
+     */
     protected $itemDefinition;
     /**
-     * @var  array
      * Maps each dynamodb attribute key to its corresponding class property name
+     *
+     * @var  array
      */
     protected $propertyMapping;
     /**
-     * @var array
      * Maps each dynamodb attribute key to its type
+     *
+     * @var array
      */
     protected $attributeTypes;
     /**
+     * CAS properties, in the format of property name => cas type
+     *
      * @var array
-     * cas properties, in the format of property name => cas type
      */
     protected $casProperties;
     /**
+     * Partitioned hash keys, in the format of property name => partioned hash key definition
      * @var PartitionedHashKey[]
-     * partitioned hash keys, in the format of property name => partioned hash key definition
      */
     protected $partitionedHashKeys;
     /**
-     * @var  Field[]
      * Maps class property name to its field definition
+     *
+     * @var Field[]
      */
     protected $fieldDefinitions;
     /**
-     * @var \ReflectionProperty[]
      * Maps each class property name to its reflection property
+     *
+     * @var \ReflectionProperty[]
      */
     protected $reflectionProperties;
     /**
-     * @var array
      * Reserved attribute names will be cleared when hydrating an object
+     *
+     * @var array
      */
     protected $reservedAttributeNames;
-
+    /**
+     * For writing log entries.
+     *
+     * @var LoggerInterface
+     */
+    protected $logger;
     /**
      * @var Reader
      */
     private $reader;
-
     /**
-     * @var array
+    /**
      * Activity Logging property, in the format of entity name => true/false
+     *
+     * @var array
      */
     private $activityLoggingProperties = [];
 
@@ -75,12 +99,19 @@ class ItemReflection implements ItemReflectionInterface
      * ItemReflection constructor.
      *
      * @param string $itemClass
+     * Full name of item class to reflect.
      * @param array $reservedAttributeNames
+     * Invalid attribute names list.
+     * @param LoggerInterface $logger For writing log entries.
      */
-    public function __construct($itemClass, $reservedAttributeNames)
-    {
+    public function __construct(
+        string $itemClass,
+        array $reservedAttributeNames = [],
+        LoggerInterface $logger = null
+    ) {
         $this->itemClass = $itemClass;
         $this->reservedAttributeNames = $reservedAttributeNames;
+        $this->logger = $logger ?? new NullLogger();
     }
 
     /**
@@ -126,7 +157,7 @@ class ItemReflection implements ItemReflectionInterface
             }
             if ( ! isset($this->propertyMapping[$key])) {
                 // this property is not defined, skip it
-                mwarning("Got an unknown attribute: %s with value %s", $key, print_r($value, true));
+                $this->logger->warning("Unknown attribute", [$key => $value]);
                 continue;
             }
             $propertyName = $this->propertyMapping[$key];
@@ -197,7 +228,6 @@ class ItemReflection implements ItemReflectionInterface
     public function getAllPartitionedValues($hashKeyName, $baseValue)
     {
         if ( ! isset($this->partitionedHashKeys[$hashKeyName])) {
-            // mdebug("The field %s is not declared as a PartitionedHashKey!", $hashKeyName)
             return [$baseValue];
         }
 

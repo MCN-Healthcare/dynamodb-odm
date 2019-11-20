@@ -9,10 +9,16 @@ parameters:
 
 dynamodb:
     # Dynamo DB
-    Oasis\Mlib\ODM\Dynamodb\ItemManager:
+    McnHealthcare\ODM\Dynamodb\ItemManager:
         public: true
         arguments:
-            $dynamodbConfig: {region: '%aws.region%', version: '%aws.api_version%', endpoint: 'http://dynamodb:8000'}
+            $dynamodbConfig:
+                region: 'us-west-2'
+                version: 'latest'
+                credentials:
+                    key: any-key
+                    secret: any-secret
+                endpoint: 'http://localhost:8000'
             $defaultTablePrefix: ''
             $cacheDir: '%kernel.cache_dir%/dynamodb'
             $isDev: true

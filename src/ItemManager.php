@@ -1,13 +1,10 @@
 <?php
-/*
- * This file is part AWS DynamoDB ODM.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 namespace McnHealthcare\ODM\Dynamodb;
 
+use Aws\DynamoDb\DynamoDbClient;
+use Aws\AwsClientInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use Doctrine\Common\Annotations\CachedReader;
@@ -15,8 +12,6 @@ use Doctrine\Common\Cache\FilesystemCache;
 use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 use Symfony\Component\Finder\Finder;
 use McnHealthcare\ODM\Dynamodb\Annotations\ActivityLogging;
-use Aws\DynamoDb\DynamoDbClient;
-use Aws\AwsClientInterface;
 
 /**
  * Class ItemManager
@@ -34,15 +29,22 @@ class ItemManager implements ItemManagerInterface
      */
     protected $dynamoDbClient;
 
+    /**
+     * @var string
+     */
     protected $defaultTablePrefix;
 
-    /** @var  AnnotationReader */
+    /**
+     * @var AnnotationReader
+     */
     protected $reader;
+
     /**
      * @var ItemReflection[]
      * Maps item class to item relfection
      */
     protected $itemReflections;
+
     /**
      * @var ItemRepository[]
      * Maps item class to corresponding repository
@@ -59,11 +61,20 @@ class ItemManager implements ItemManagerInterface
      */
     protected $skipCheckAndSet = false;
 
-    /** @var */
+    /**
+     * @var string
+     */
     private $cacheDir;
 
-    /** @var bool */
+    /**
+     * @var bool
+     */
     private $isDev;
+
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
 
     /**
      * Initialize instance.
@@ -72,17 +83,20 @@ class ItemManager implements ItemManagerInterface
      * @param string $defaultTablePrefix Default prefix for table names.
      * @param string $cacheDir Path for directory to cache metadata.
      * @param bool $isDev Flags development environment.
+     * @param LoggerInterface $logger For writing log entries.
      */
     public function __construct(
         AwsClientInterface $dynamoDbClient,
         string $defaultTablePrefix,
         string $cacheDir,
-        bool $isDev = true
+        bool $isDev = true,
+        LoggerInterface $logger = null
     ) {
         $this->dynamoDbClient = $dynamoDbClient;
         $this->defaultTablePrefix = $defaultTablePrefix;
         $this->cacheDir = $cacheDir;
         $this->isDev = $isDev;
+        $this->logger = $logger ?? new NullLogger();
 
         AnnotationRegistry::registerLoader([$this, 'loadAnnotationClass']);
 
@@ -99,7 +113,9 @@ class ItemManager implements ItemManagerInterface
     public function addNamespace($namespace, $srcDir)
     {
         if ( ! \is_dir($srcDir)) {
-            \mwarning("Directory %s doesn't exist.", $srcDir);
+            $this->logger->warning(
+                sprintf("Directory %s doesn't exist.", $srcDir)
+            );
 
             return;
         }
@@ -114,7 +130,6 @@ class ItemManager implements ItemManagerInterface
                 $splFileInfo->getBasename(".php")
             );
             $classname = preg_replace('#\\\\+#', '\\', $classname);
-            //mdebug("Class name is %s", $classname);
             $this->possibleItemClasses[] = $classname;
         }
     }
@@ -254,7 +269,11 @@ class ItemManager implements ItemManagerInterface
     public function getItemReflection($itemClass)
     {
         if ( ! isset($this->itemReflections[$itemClass])) {
-            $reflection = new ItemReflection($itemClass, $this->reservedAttributeNames);
+            $reflection = new ItemReflection(
+                $itemClass,
+                $this->reservedAttributeNames,
+                $this->logger
+            );
             $reflection->parse($this->reader);
             $this->itemReflections[$itemClass] = $reflection;
         } else {
@@ -292,7 +311,8 @@ class ItemManager implements ItemManagerInterface
             $repo = new $repoClass(
                 $reflection,
                 $this,
-                $activityLoggingDetails
+                $activityLoggingDetails,
+                $this->logger
             );
             $this->repositories[$itemClass] = $repo;
         } else {

@@ -88,7 +88,7 @@ class ActivityLogging
             $this->itemManager->getCacheDir(),
             $this->itemManager->isDev()
         );
-        $this->logItemReflection = new ItemReflection(ActivityLog::class, null);
+        $this->logItemReflection = new ItemReflection(ActivityLog::class);
 
         $this->reader = $this->logItemManager->getReader();
 

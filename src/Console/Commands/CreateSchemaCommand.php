@@ -46,7 +46,7 @@ class CreateSchemaCommand extends AbstractSchemaCommand
         $skipExisting = $input->getOption('skip-existing-table');
         $dryRun = $input->getOption('dry-run');
         $im = $this->getItemManager();
-        $dynamoManager = new DynamoDbManager($this->getItemManager()->getDynamodbConfig());
+        $dynamoManager = new DynamoDbManager($this->getItemManager()->getDynamoDbClient());
 
         $classes = $this->getManagedItemClasses();
         foreach ($classes as $class => $reflection) {
@@ -62,7 +62,12 @@ class CreateSchemaCommand extends AbstractSchemaCommand
         foreach ($classes as $class => $reflection) {
             $itemDef = $reflection->getItemDefinition();
             if ($itemDef->projected) {
-                \mnotice("Class %s is projected class, will not create table.", $class);
+                $output->writeln(
+                    "Will not create projected table <info>$class</info>"
+                );
+                $this->logger->notice(
+                    sprintf("Class %s is projected class, will not create table.", $class)
+                );
                 continue;
             }
 

@@ -37,7 +37,7 @@ class DropSchemaCommand extends AbstractSchemaCommand
     {
         $classes = $this->getManagedItemClasses();
         $im = $this->getItemManager();
-        $dynamoManager = new DynamoDbManager($this->getItemManager()->getDynamodbConfig());
+        $dynamoManager = new DynamoDbManager($this->getItemManager()->getDynamoDbClient());
 
         $waits = [];
         foreach ($classes as $class => $reflection) {
