@@ -1,5 +1,5 @@
 <?php
-namespace App\Bridge\DynamoDbOdm;
+namespace McnHealthcare\ODM\Dynamodb;
 
 /**
  * Interface DynamoDbOdmItem
