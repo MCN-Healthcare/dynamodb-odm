@@ -92,7 +92,7 @@ class ManagedItemState
      * @param null|callable $hashFunction($propertyValue)
      * Custom hashing function.
      */
-    public function updatePartitionedHashKeys(callable $hashFunction = null)
+    public function updatePartitionedHashKeys(callable $hashFunction = null): void
     {
         foreach ($this->itemReflection->getPartitionedHashKeys() as $partitionedHashKey => $def) {
             $baseValue = $this->itemReflection->getPropertyValue($this->item, $def->baseField);
@@ -112,7 +112,7 @@ class ManagedItemState
      *
      * @param int $timestampOffset UTC offset in seconds.
      */
-    public function updateCASTimestamps($timestampOffset = 0)
+    public function updateCASTimestamps($timestampOffset = 0): void
     {
         $now = time() + $timestampOffset;
         foreach ($this->itemReflection->getCasProperties() as $propertyName => $casType) {
@@ -153,7 +153,7 @@ class ManagedItemState
      *
      * @param object $item New item object.
      */
-    public function setItem($item)
+    public function setItem($item): void
     {
         $this->item = $item;
     }
@@ -173,7 +173,7 @@ class ManagedItemState
      *
      * @param array $originalData
      */
-    public function setOriginalData(array $originalData)
+    public function setOriginalData(array $originalData): void
     {
         $this->originalData = $originalData;
     }
@@ -199,7 +199,7 @@ class ManagedItemState
      *
      * @param int $state
      */
-    public function setState(int $state)
+    public function setState(int $state): void
     {
         $this->state = $state;
     }
@@ -207,7 +207,7 @@ class ManagedItemState
     /**
      * Updates original data for item.
      */
-    public function setUpdated()
+    public function setUpdated(): void
     {
         $this->originalData = $this->itemReflection->dehydrate($this->item);
     }

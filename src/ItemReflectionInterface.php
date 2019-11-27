@@ -38,7 +38,7 @@ interface ItemReflectionInterface
      *
      * @throws ReflectionException
      */
-    public function parse(Reader $reader);
+    public function parse(Reader $reader): void;
 
     /**
      * Gets all partitioned values for a partitioned key field.
@@ -70,7 +70,7 @@ interface ItemReflectionInterface
      * @param string $propertyName Name of target property.
      * @param mixed $value Target value.
      */
-    public function updateProperty(object $obj, string $propertyName, $value);
+    public function updateProperty(object $obj, string $propertyName, $value): void;
 
     /**
      * Get map of attribute names to odm field types.

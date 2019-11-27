@@ -19,26 +19,26 @@ interface ItemManagerInterface
      * @param string $namespace PHP namespace for items in srcDir.
      * @param string $srcDir Source directory path for namespace.
      */
-    public function addNamespace(string $namespace, string $srcDir);
+    public function addNamespace(string $namespace, string $srcDir): void;
 
     /**
      * Adds a reserved attribute name.
      *
      * @param array|tuple $args List of attribute names.
      */
-    public function addReservedAttributeNames(...$args);
+    public function addReservedAttributeNames(...$args): void;
 
     /**
      * Clears staged writes for all items.
      */
-    public function clear();
+    public function clear(): void;
 
     /**
      * Detaches an item instance from the list of managed items.
      *
      * @param object $item The item to unmanage.
      */
-    public function detach(object $item);
+    public function detach(object $item): void;
 
     /**
      * Commits outstanding writes to the database.
@@ -46,7 +46,7 @@ interface ItemManagerInterface
      * @throws AnnotationException
      * @throws ReflectionException
      */
-    public function flush();
+    public function flush(): void;
 
     /**
      * Helper method to fetch an item by key(s).
@@ -77,7 +77,7 @@ interface ItemManagerInterface
      *
      * @param bool $skipCheckAndSet
      */
-    public function setSkipCheckAndSet(bool $skipCheckAndSet);
+    public function setSkipCheckAndSet(bool $skipCheckAndSet): void;
 
     /**
      * Loads an annotation class.
@@ -95,7 +95,7 @@ interface ItemManagerInterface
      *
      * @param object $item New item to write on flush.
      */
-    public function persist(object $item);
+    public function persist(object $item): void;
 
     /**
      * Refresh item data from database.
@@ -103,14 +103,14 @@ interface ItemManagerInterface
      * @param object $item Item to refresh.
      * @param bool $persistIfNotManaged Flags create if not found.
      */
-    public function refresh(object $item, $persistIfNotManaged = false);
+    public function refresh(object $item, $persistIfNotManaged = false): void;
 
     /**
      * Flags delete item from database next flush.
      *
      * @param object $item Item to refresh.
      */
-    public function remove(object $item);
+    public function remove(object $item): void;
 
     /**
      * Checks cas is diabled.
@@ -183,7 +183,7 @@ interface ItemManagerInterface
      *
      * @param array $reservedAttributeNames List of reserved attribute names.
      */
-    public function setReservedAttributeNames(array $reservedAttributeNames);
+    public function setReservedAttributeNames(array $reservedAttributeNames): void;
 
     /**
      * Check Loggable

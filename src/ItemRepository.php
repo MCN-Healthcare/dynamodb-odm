@@ -15,6 +15,7 @@ use McnHealthcare\ODM\Dynamodb\Helpers\Table;
 use McnHealthcare\ODM\Dynamodb\Exceptions\DataConsistencyException;
 use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 use McnHealthcare\ODM\Dynamodb\Exceptions\UnderlyingDatabaseException;
+use SplDoublyLinkedList;
 
 /**
  * Class ItemRepository
@@ -110,8 +111,8 @@ class ItemRepository implements ItemRepositoryInterface
      * @throws \ReflectionException
      */
     public function __construct(
-        ItemReflection $itemReflection,
-        ItemManager $itemManager,
+        ItemReflectionInterface $itemReflection,
+        ItemManagerInterface $itemManager,
         ActivityLoggingDetails $loggingDetails,
         LoggerInterface $logger = null,
         QueryInterface $query = null
@@ -162,7 +163,7 @@ class ItemRepository implements ItemRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function batchGet($groupOfKeys, $isConsistentRead = false)
+    public function batchGet($groupOfKeys, $isConsistentRead = false): array
     {
         /** @var string[] $fieldNameMapping */
         $fieldNameMapping = $this->itemReflection->getFieldNameMapping();
@@ -200,7 +201,7 @@ class ItemRepository implements ItemRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function clear()
+    public function clear(): void
     {
         $this->itemManaged = [];
     }
@@ -208,7 +209,7 @@ class ItemRepository implements ItemRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function detach($obj)
+    public function detach($obj): void
     {
         if ( ! $this->itemReflection->getReflectionClass()->isInstance($obj)) {
             throw new ODMException(
@@ -226,7 +227,7 @@ class ItemRepository implements ItemRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function flush()
+    public function flush(): void
     {
         $skipCAS = $this->itemManager->shouldSkipCheckAndSet()
             || (count($this->itemReflection->getCasProperties()) == 0);
@@ -399,7 +400,7 @@ class ItemRepository implements ItemRepositoryInterface
         $isConsistentRead = false,
         $isAscendingOrder = true,
         $concurrency = 10
-    ) {
+    ): void {
         if ( ! is_array($hashKeyValues)) {
             $hashKeyValues = [$hashKeyValues];
         }
@@ -444,7 +445,7 @@ class ItemRepository implements ItemRepositoryInterface
         $filterExpression = '',
         $isConsistentRead = false,
         $concurrency = 10
-    ) {
+    ): int {
         if ( ! is_array($hashKeyValues)) {
             $hashKeyValues = [$hashKeyValues];
         }
@@ -489,7 +490,7 @@ class ItemRepository implements ItemRepositoryInterface
         $indexName = Index::PRIMARY_INDEX,
         $isConsistentRead = false,
         $isAscendingOrder = true
-    ) {
+    ): void {
         $fields = $this->getFieldsArray($conditions);
         $this->table->parallelScanAndRun(
             $parallel,
@@ -511,7 +512,7 @@ class ItemRepository implements ItemRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function persist($obj)
+    public function persist($obj): void
     {
         if ( ! $this->itemReflection->getReflectionClass()->isInstance($obj)) {
             throw new ODMException(
@@ -534,7 +535,7 @@ class ItemRepository implements ItemRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function persistLoggable($obj)
+    public function persistLoggable($obj): void
     {
         if ( ! $this->logItemReflection->getReflectionClass()->isInstance($obj)) {
             throw new ODMException(
@@ -566,7 +567,7 @@ class ItemRepository implements ItemRepositoryInterface
         $evaluationLimit = 30,
         $isConsistentRead = false,
         $isAscendingOrder = true
-    ) {
+    ): array {
         $fields = array_merge($this->getFieldsArray($conditions), $this->getFieldsArray($filterExpression));
         $results = $this->table->query(
             $conditions,
@@ -599,8 +600,8 @@ class ItemRepository implements ItemRepositoryInterface
         $filterExpression = '',
         $isConsistentRead = false,
         $isAscendingOrder = true
-    ) {
-        $ret = new \SplDoublyLinkedList();
+    ): SplDoublyLinkedList {
+        $ret = new SplDoublyLinkedList();
         $this->queryAndRun(
             function ($item) use ($ret) {
                 $ret->push($item);
@@ -627,7 +628,7 @@ class ItemRepository implements ItemRepositoryInterface
         $filterExpression = '',
         $isConsistentRead = false,
         $isAscendingOrder = true
-    ) {
+    ): void {
         $fields = array_merge($this->getFieldsArray($conditions), $this->getFieldsArray($filterExpression));
         $this->table->queryAndRun(
             function ($result) use ($callback) {
@@ -655,7 +656,7 @@ class ItemRepository implements ItemRepositoryInterface
         $indexName = Index::PRIMARY_INDEX,
         $filterExpression = '',
         $isConsistentRead = false
-    ) {
+    ): int {
         $fields = array_merge($this->getFieldsArray($conditions), $this->getFieldsArray($filterExpression));
 
         return $this->table->queryCount(
@@ -671,7 +672,7 @@ class ItemRepository implements ItemRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function refresh($obj, $persistIfNotManaged = false)
+    public function refresh($obj, $persistIfNotManaged = false): void
     {
         if (! $this->itemReflection->getReflectionClass()->isInstance($obj)) {
             throw new ODMException(
@@ -698,7 +699,7 @@ class ItemRepository implements ItemRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function remove($obj)
+    public function remove($obj): void
     {
         if (! $this->itemReflection->getReflectionClass()->isInstance($obj)) {
             throw new ODMException(
@@ -716,7 +717,7 @@ class ItemRepository implements ItemRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function removeAll()
+    public function removeAll(): void
     {
         do {
             $this->clear();
@@ -750,7 +751,7 @@ class ItemRepository implements ItemRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function removeById($keys)
+    public function removeById($keys): void
     {
         $obj = $this->get($keys, true);
         if ($obj) {
@@ -769,7 +770,7 @@ class ItemRepository implements ItemRepositoryInterface
         $evaluationLimit = 30,
         $isConsistentRead = false,
         $isAscendingOrder = true
-    ) {
+    ): array {
         $fields = $this->getFieldsArray($conditions);
         $results = $this->table->scan(
             $conditions,
@@ -801,8 +802,8 @@ class ItemRepository implements ItemRepositoryInterface
         $isConsistentRead = false,
         $isAscendingOrder = true,
         $parallel = 1
-    ) {
-        $ret = new \SplDoublyLinkedList();
+    ): SplDoublyLinkedList {
+        $ret = new SplDoublyLinkedList();
         $this->scanAndRun(
             function ($item) use ($ret) {
                 $ret->push($item);
@@ -829,7 +830,7 @@ class ItemRepository implements ItemRepositoryInterface
         $isConsistentRead = false,
         $isAscendingOrder = true,
         $parallel = 1
-    ) {
+    ): void {
         $resultCallback = function ($result) use ($callback) {
             $obj = $this->persistFetchedItemData($result);
 
@@ -875,7 +876,7 @@ class ItemRepository implements ItemRepositoryInterface
         $indexName = Index::PRIMARY_INDEX,
         $isConsistentRead = false,
         $parallel = 10
-    ) {
+    ): int {
         $fields = $this->getFieldsArray($conditions);
 
         return $this->table->scanCount(
@@ -900,7 +901,7 @@ class ItemRepository implements ItemRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function logActivity($dataObj, int $offset = 0)
+    public function logActivity($dataObj, int $offset = 0): bool
     {
         $log = new ActivityLogging(
             $this->itemReflection, $this->itemManager, $this->changedBy, $this->loggedtable, $offset
@@ -911,11 +912,11 @@ class ItemRepository implements ItemRepositoryInterface
     }
 
     /**
-     * @param $conditions
+     * @param string $conditions
      *
      * @return array
      */
-    protected function getFieldsArray($conditions)
+    protected function getFieldsArray(string $conditions): array
     {
         $ret = preg_match_all('/#(?P<field>[a-zA-Z_][a-zA-Z0-9_]*)/', $conditions, $matches);
         if ( ! $ret) {

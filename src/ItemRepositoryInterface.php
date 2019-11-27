@@ -4,6 +4,7 @@ namespace McnHealthcare\ODM\Dynamodb;
 use McnHealthcare\ODM\Dynamodb\Helpers\Index;
 use Doctrine\Common\Annotations\AnnotationException;
 use ReflectionException;
+use SplDoublyLinkedList;
 
 /**
  * Interface DynamoDbOdmRepository
@@ -19,19 +20,19 @@ interface ItemRepositoryInterface
      *
      * @return array
      */
-    public function batchGet($groupOfKeys, bool $isConsistentRead = false);
+    public function batchGet($groupOfKeys, bool $isConsistentRead = false): array;
 
     /**
      * Clear list of managed items.
      */
-    public function clear();
+    public function clear(): void;
 
     /**
      * Unmanages an instance of an item.
      *
      * @param object $obj Item to detach.
      */
-    public function detach(object $obj);
+    public function detach(object $obj): void;
 
     /**
      * Flush managed items to db.
@@ -39,7 +40,7 @@ interface ItemRepositoryInterface
      * @throws AnnotationException
      * @throws ReflectionException
      */
-    public function flush();
+    public function flush(): void;
 
     /**
      * Gets item for key.
@@ -78,7 +79,7 @@ interface ItemRepositoryInterface
         $isConsistentRead = false,
         $isAscendingOrder = true,
         $concurrency = 10
-    );
+    ): void;
 
     /**
      * Gets result count for a complex query.
@@ -103,7 +104,7 @@ interface ItemRepositoryInterface
         $filterExpression = '',
         $isConsistentRead = false,
         $concurrency = 10
-    );
+    ): int;
 
     /**
      * Performs parellel queries.
@@ -124,21 +125,21 @@ interface ItemRepositoryInterface
         $indexName = Index::PRIMARY_INDEX,
         $isConsistentRead = false,
         $isAscendingOrder = true
-    );
+    ): void;
 
     /**
      * Makes item a managed item.
      *
      * @param $obj
      */
-    public function persist($obj);
+    public function persist($obj): void;
 
     /**
      * Persist for the Activity Logger
      *
      * @param $obj
      */
-    public function persistLoggable($obj);
+    public function persistLoggable($obj): void;
 
     /**
      * Performs a query.
@@ -163,7 +164,7 @@ interface ItemRepositoryInterface
         $evaluationLimit = 30,
         $isConsistentRead = false,
         $isAscendingOrder = true
-    );
+    ): array;
 
     /**
      * Queries all items.
@@ -175,7 +176,7 @@ interface ItemRepositoryInterface
      * @param bool $isConsistentRead
      * @param bool $isAscendingOrder
      *
-     * @return \SplDoublyLinkedList
+     * @return SplDoublyLinkedList
      */
     public function queryAll(
         $conditions = '',
@@ -184,7 +185,7 @@ interface ItemRepositoryInterface
         $filterExpression = '',
         $isConsistentRead = false,
         $isAscendingOrder = true
-    );
+    ): SplDoublyLinkedList;
 
     /**
      * Performs a query.
@@ -205,7 +206,7 @@ interface ItemRepositoryInterface
         $filterExpression = '',
         $isConsistentRead = false,
         $isAscendingOrder = true
-    );
+    ): void;
 
     /**
      * Query results count.
@@ -216,7 +217,7 @@ interface ItemRepositoryInterface
      * @param string $filterExpression
      * @param bool $isConsistentRead
      *
-     * @return array|bool|int
+     * @return int
      */
     public function queryCount(
         $conditions,
@@ -224,7 +225,7 @@ interface ItemRepositoryInterface
         $indexName = Index::PRIMARY_INDEX,
         $filterExpression = '',
         $isConsistentRead = false
-    );
+    ): int;
 
     /**
      * Reload entity from db.
@@ -232,14 +233,14 @@ interface ItemRepositoryInterface
      * @param mixed $obj
      * @param bool $persistIfNotManaged
      */
-    public function refresh($obj, $persistIfNotManaged = false);
+    public function refresh($obj, $persistIfNotManaged = false): void;
 
     /**
      * Flags item to be removed ferom db on next flush.
      *
      * @param $obj
      */
-    public function remove($obj);
+    public function remove($obj): void;
 
     /**
      * Remove all items.
@@ -247,14 +248,14 @@ interface ItemRepositoryInterface
      * @throws \Doctrine\Common\Annotations\AnnotationException
      * @throws \ReflectionException
      */
-    public function removeAll();
+    public function removeAll(): void;
 
     /**
      * Remove item(s) by primary key.
      *
      * @param mixed $keys
      */
-    public function removeById($keys);
+    public function removeById($keys): void;
 
     /**
      * Perform a scan query.
@@ -277,7 +278,7 @@ interface ItemRepositoryInterface
         $evaluationLimit = 30,
         $isConsistentRead = false,
         $isAscendingOrder = true
-    );
+    ): array;
 
     /**
      * Perform a scan all query.
@@ -298,7 +299,7 @@ interface ItemRepositoryInterface
         $isConsistentRead = false,
         $isAscendingOrder = true,
         $parallel = 1
-    );
+    ): SplDoublyLinkedList;
 
     /**
      * Performs a scan query.
@@ -319,7 +320,7 @@ interface ItemRepositoryInterface
         $isConsistentRead = false,
         $isAscendingOrder = true,
         $parallel = 1
-    );
+    ): void;
 
     /**
      * Gets count of scan results.
@@ -338,7 +339,7 @@ interface ItemRepositoryInterface
         $indexName = Index::PRIMARY_INDEX,
         $isConsistentRead = false,
         $parallel = 10
-    );
+    ): int;
 
     /**
      * Gets table object for items in this repository.
@@ -363,7 +364,7 @@ interface ItemRepositoryInterface
      *
      * @throws \ReflectionException
      */
-    public function logActivity($dataObj, int $offset = 0);
+    public function logActivity($dataObj, int $offset = 0): bool;
 
     /**
      * Gets table name.
