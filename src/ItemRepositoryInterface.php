@@ -137,7 +137,7 @@ interface ItemRepositoryInterface
     /**
      * Persist for the Activity Logger
      *
-     * @param $obj
+     * @param object $obj
      */
     public function persistLoggable(object $obj): void;
 
