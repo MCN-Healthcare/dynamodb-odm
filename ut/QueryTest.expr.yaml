@@ -6,7 +6,7 @@ happy path:
             alert:
                 expects: [never]
         - domain: itemManager
-          class: 'McnHealthcare\ODM\Dynamodb\ItemManager'
+          class: 'McnHealthcare\ODM\Dynamodb\ItemManagerInterface'
           fixture:
             getRepository:
                 expects: [never]
@@ -16,7 +16,7 @@ happy path:
             __call:
                 expects: [never]
         - domain: container
-          class: 'AppTests\Fixtures\MockContainer'
+          class: 'McnHealthcare\ODM\Dynamodb\Ut\MockContainer'
           fixture:
             get:
                 expects: [exactly, 2]

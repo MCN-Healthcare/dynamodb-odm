@@ -1,5 +1,5 @@
 <?php
-namespace AppTests\Bridge\DynamoDbOdm;
+namespace McnHealthcare\ODM\Dynamodb\Ut;
 
 use MockFromYaml\MockFromArrayCreatorTrait;
 use MockFromYaml\YamlTestCasesReaderTrait;

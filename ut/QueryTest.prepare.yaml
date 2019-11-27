@@ -21,15 +21,15 @@ has index:
                       gsi: []
                       lsi: []
         - domain: itemManager
-          class: 'McnHealthcare\ODM\Dynamodb\ItemManager'
+          class: 'McnHealthcare\ODM\Dynamodb\ItemManagerInterface'
           fixture:
             getRepository:
                 expects: [once]
-                with: [equalTo, 'App\Entity\Interfaces\SearchLog']
+                with: [equalTo, 'McnHealthcare\ODM\Dynamodb\Ut\Game']
                 will: [returnValue, '$repository']
             getItemReflection:
                 expects: [once]
-                with: [equalTo, 'App\Entity\Interfaces\SearchLog']
+                with: [equalTo, 'McnHealthcare\ODM\Dynamodb\Ut\Game']
                 will: [returnValue, '$reflection']
         - domain: expr
           class: 'McnHealthcare\ODM\Dynamodb\Query\QueryExprInterface'
@@ -48,7 +48,7 @@ has index:
             __call:
                 expects: [never]
         - domain: container
-          class: 'AppTests\Fixtures\MockContainer'
+          class: 'McnHealthcare\ODM\Dynamodb\Ut\MockContainer'
           fixture:
             get:
                 expects: [exactly, 3]
@@ -64,7 +64,7 @@ has index:
                         -
                             - 'from-args'
                             -
-                                - 'App\Entity\Interfaces\SearchLog'
+                                - 'McnHealthcare\ODM\Dynamodb\Ut\Game'
                         -
                             - 'where-args'
                             -
@@ -93,15 +93,15 @@ no index:
                       gsi: []
                       lsi: []
         - domain: itemManager
-          class: 'McnHealthcare\ODM\Dynamodb\ItemManager'
+          class: 'McnHealthcare\ODM\Dynamodb\ItemManagerInterface'
           fixture:
             getRepository:
                 expects: [once]
-                with: [equalTo, 'App\Entity\Interfaces\SearchLog']
+                with: [equalTo, 'McnHealthcare\ODM\Dynamodb\Ut\Game']
                 will: [returnValue, '$repository']
             getItemReflection:
                 expects: [once]
-                with: [equalTo, 'App\Entity\Interfaces\SearchLog']
+                with: [equalTo, 'McnHealthcare\ODM\Dynamodb\Ut\Game']
                 will: [returnValue, '$reflection']
         - domain: expr
           class: 'McnHealthcare\ODM\Dynamodb\Query\QueryExprInterface'
@@ -120,7 +120,7 @@ no index:
             __call:
                 expects: [never]
         - domain: container
-          class: 'AppTests\Fixtures\MockContainer'
+          class: 'McnHealthcare\ODM\Dynamodb\Ut\MockContainer'
           fixture:
             get:
                 expects: [exactly, 3]
@@ -136,7 +136,7 @@ no index:
                         -
                             - 'from-args'
                             -
-                                - 'App\Entity\Interfaces\SearchLog'
+                                - 'McnHealthcare\ODM\Dynamodb\Ut\Game'
                         -
                             - 'where-args'
                             -

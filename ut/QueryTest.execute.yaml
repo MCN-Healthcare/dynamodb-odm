@@ -31,7 +31,7 @@ query no parameters:
                       gsi: []
                       lsi: []
         - domain: itemManager
-          class: 'McnHealthcare\ODM\Dynamodb\ItemManager'
+          class: 'McnHealthcare\ODM\Dynamodb\ItemManagerInterface'
           fixture:
             getRepository:
                 expects: [once]
@@ -58,7 +58,7 @@ query no parameters:
             __call:
                 expects: [never]
         - domain: container
-          class: 'AppTests\Fixtures\MockContainer'
+          class: 'McnHealthcare\ODM\Dynamodb\Ut\MockContainer'
           fixture:
             get:
                 expects: [exactly, 5]
@@ -147,7 +147,7 @@ scan no parameters:
             __call:
                 expects: [never]
         - domain: container
-          class: 'AppTests\Fixtures\MockContainer'
+          class: 'McnHealthcare\ODM\Dynamodb\Ut\MockContainer'
           fixture:
             get:
                 expects: [exactly, 5]
