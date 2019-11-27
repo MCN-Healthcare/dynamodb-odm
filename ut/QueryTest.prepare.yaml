@@ -1,0 +1,143 @@
+has index:
+    fixtures:
+        - domain: logger
+          class: 'Psr\Log\LoggerInterface'
+          fixture:
+            alert:
+                expects: [never]
+        - domain: repository
+          class: 'McnHealthcare\ODM\Dynamodb\ItemRepositoryInterface'
+          fixture:
+            query:
+                expects: [never]
+        - domain: reflection
+          class: 'McnHealthcare\ODM\Dynamodb\ItemReflectionInterface'
+          fixture:
+            getItemIndexes:
+                expects: [once]
+                will:
+                    - returnValue
+                    - primary: '$primaryIndex1'
+                      gsi: []
+                      lsi: []
+        - domain: itemManager
+          class: 'McnHealthcare\ODM\Dynamodb\ItemManager'
+          fixture:
+            getRepository:
+                expects: [once]
+                with: [equalTo, 'App\Entity\Interfaces\SearchLog']
+                will: [returnValue, '$repository']
+            getItemReflection:
+                expects: [once]
+                with: [equalTo, 'App\Entity\Interfaces\SearchLog']
+                will: [returnValue, '$reflection']
+        - domain: expr
+          class: 'McnHealthcare\ODM\Dynamodb\Query\QueryExprInterface'
+          fixture:
+            getFields:
+                expects: [once]
+                will:
+                    - returnValue
+                    - pi1HashField: true
+            expr:
+                expects: [once]
+                will: [returnValue, 'pi1HashField = 2112']
+        - domain: exprFactory
+          class: 'McnHealthcare\ODM\Dynamodb\Query\QueryExprFactoryInterface'
+          fixture:
+            __call:
+                expects: [never]
+        - domain: container
+          class: 'AppTests\Fixtures\MockContainer'
+          fixture:
+            get:
+                expects: [exactly, 3]
+                will:
+                    - returnValueMap
+                    -
+                        -
+                            - 'constructor-args'
+                            -
+                                - '$logger'
+                                - '$itemManager'
+                                - '$exprFactory'
+                        -
+                            - 'from-args'
+                            -
+                                - 'App\Entity\Interfaces\SearchLog'
+                        -
+                            - 'where-args'
+                            -
+                                - '$expr'
+
+no index:
+    fixtures:
+        - domain: logger
+          class: 'Psr\Log\LoggerInterface'
+          fixture:
+            alert:
+                expects: [never]
+        - domain: repository
+          class: 'McnHealthcare\ODM\Dynamodb\ItemRepositoryInterface'
+          fixture:
+            query:
+                expects: [never]
+        - domain: reflection
+          class: 'McnHealthcare\ODM\Dynamodb\ItemReflectionInterface'
+          fixture:
+            getItemIndexes:
+                expects: [once]
+                will:
+                    - returnValue
+                    - primary: '$primaryIndex1'
+                      gsi: []
+                      lsi: []
+        - domain: itemManager
+          class: 'McnHealthcare\ODM\Dynamodb\ItemManager'
+          fixture:
+            getRepository:
+                expects: [once]
+                with: [equalTo, 'App\Entity\Interfaces\SearchLog']
+                will: [returnValue, '$repository']
+            getItemReflection:
+                expects: [once]
+                with: [equalTo, 'App\Entity\Interfaces\SearchLog']
+                will: [returnValue, '$reflection']
+        - domain: expr
+          class: 'McnHealthcare\ODM\Dynamodb\Query\QueryExprInterface'
+          fixture:
+            getFields:
+                expects: [once]
+                will:
+                    - returnValue
+                    - field: true
+            expr:
+                expects: [once]
+                will: [returnValue, 'field = 2112']
+        - domain: exprFactory
+          class: 'McnHealthcare\ODM\Dynamodb\Query\QueryExprFactoryInterface'
+          fixture:
+            __call:
+                expects: [never]
+        - domain: container
+          class: 'AppTests\Fixtures\MockContainer'
+          fixture:
+            get:
+                expects: [exactly, 3]
+                will:
+                    - returnValueMap
+                    -
+                        -
+                            - 'constructor-args'
+                            -
+                                - '$logger'
+                                - '$itemManager'
+                                - '$exprFactory'
+                        -
+                            - 'from-args'
+                            -
+                                - 'App\Entity\Interfaces\SearchLog'
+                        -
+                            - 'where-args'
+                            -
+                                - '$expr'

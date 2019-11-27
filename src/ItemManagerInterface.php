@@ -1,8 +1,11 @@
 <?php
 namespace McnHealthcare\ODM\Dynamodb;
 
+use Doctrine\Common\Annotations\Reader;
 use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Annotations\AnnotationException;
 use Aws\AwsClientInterface;
+use ReflectionException;
 
 /**
  * Interface ItemManagerInterface
@@ -16,7 +19,7 @@ interface ItemManagerInterface
      * @param string $namespace PHP namespace for items in srcDir.
      * @param string $srcDir Source directory path for namespace.
      */
-    public function addNamespace($namespace, $srcDir);
+    public function addNamespace(string $namespace, string $srcDir);
 
     /**
      * Adds a reserved attribute name.
@@ -35,13 +38,13 @@ interface ItemManagerInterface
      *
      * @param object $item The item to unmanage.
      */
-    public function detach($item);
+    public function detach(object $item);
 
     /**
      * Commits outstanding writes to the database.
      *
-     * @throws \Doctrine\Common\Annotations\AnnotationException
-     * @throws \ReflectionException
+     * @throws AnnotationException
+     * @throws ReflectionException
      */
     public function flush();
 
@@ -50,11 +53,15 @@ interface ItemManagerInterface
      *
      * @param string $itemClass Full item class name.
      * @param array $keys Map of key property name value pairs.
-     * @param bool $consistentRead Flags want consisten data.
+     * @param bool $consistentRead Flags want consistent data.
      *
      * @return null|object
      */
-    public function get($itemClass, array $keys, $consistentRead = false);
+    public function get(
+        string $itemClass,
+        array $keys,
+        bool $consistentRead = false
+    ): ?object;
 
     /**
      * Checks for cas disabled.
@@ -63,14 +70,14 @@ interface ItemManagerInterface
      *
      * @deprecated use shouldSkipCheckAndSet() instead
      */
-    public function isSkipCheckAndSet();
+    public function isSkipCheckAndSet(): bool;
 
     /**
      * Sets skip cas flag.
      *
      * @param bool $skipCheckAndSet
      */
-    public function setSkipCheckAndSet($skipCheckAndSet);
+    public function setSkipCheckAndSet(bool $skipCheckAndSet);
 
     /**
      * Loads an annotation class.
@@ -81,14 +88,14 @@ interface ItemManagerInterface
      *
      * @internal
      */
-    public function loadAnnotationClass($className);
+    public function loadAnnotationClass(string $className): bool;
 
     /**
      * Persists an item.
      *
      * @param object $item New item to write on flush.
      */
-    public function persist($item);
+    public function persist(object $item);
 
     /**
      * Refresh item data from database.
@@ -96,28 +103,28 @@ interface ItemManagerInterface
      * @param object $item Item to refresh.
      * @param bool $persistIfNotManaged Flags create if not found.
      */
-    public function refresh($item, $persistIfNotManaged = false);
+    public function refresh(object $item, $persistIfNotManaged = false);
 
     /**
      * Flags delete item from database next flush.
      *
      * @param object $item Item to refresh.
      */
-    public function remove($item);
+    public function remove(object $item);
 
     /**
      * Checks cas is diabled.
      *
      * @return bool
      */
-    public function shouldSkipCheckAndSet();
+    public function shouldSkipCheckAndSet(): bool;
 
     /**
      * Gets default table prefix.
      *
-     * @return null|string
+     * @return string
      */
-    public function getDefaultTablePrefix();
+    public function getDefaultTablePrefix(): string;
 
     /**
      * Gets dynamodb client used by the manager.
@@ -131,50 +138,52 @@ interface ItemManagerInterface
      *
      * @param string $itemClass Item class to get reflection for.
      *
-     * @return ItemReflection
+     * @return ItemReflectionInterface
      *
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
-    public function getItemReflection($itemClass);
+    public function getItemReflection(
+        string $itemClass
+    ): ItemReflectionInterface;
 
     /**
      * Gets list of item classes.
      *
      * @return string[]
      */
-    public function getPossibleItemClasses();
+    public function getPossibleItemClasses(): array;
 
     /**
      * Gets annotation reader.
      *
-     * @return AnnotationReader
+     * @return Reader
      */
-    public function getReader();
+    public function getReader(): Reader;
 
     /**
      * Gets singleton repository for item class.
      *
      * @param string $itemClass Full item class name.
      *
-     * @return ItemRepository
+     * @return ItemRepositoryInterface
      *
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
-    public function getRepository($itemClass);
+    public function getRepository(string $itemClass): ItemRepositoryInterface;
 
     /**
      * Gets list of reserved attribute names.
      *
      * @return array
      */
-    public function getReservedAttributeNames();
+    public function getReservedAttributeNames(): array;
 
     /**
      * Sets list of reserved attribute names.
      *
      * @param array $reservedAttributeNames List of reserved attribute names.
      */
-    public function setReservedAttributeNames($reservedAttributeNames);
+    public function setReservedAttributeNames(array $reservedAttributeNames);
 
     /**
      * Check Loggable
@@ -182,23 +191,23 @@ interface ItemManagerInterface
      * Check if the entity being passed has
      * the annotation for Activity Logging and is enabled
      *
-     * @param object $entity
+     * @param string|object $entity
      *
      * @return bool
      *
-     * @throws \Doctrine\Common\Annotations\AnnotationException
-     * @throws \ReflectionException
+     * @throws AnnotationException
+     * @throws ReflectionException
      *
      * @see https://www.doctrine-project.org/projects/doctrine-annotations/en/1.6/custom.html
      */
-    public function checkLoggable($entity);
+    public function checkLoggable(object $entity): bool;
 
     /**
      * Gets directory for meta data cache.
      *
      * @return null|string
      */
-    public function getCacheDir();
+    public function getCacheDir(): string;
 
     /**
      * Gets is dev flag value.

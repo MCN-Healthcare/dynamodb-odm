@@ -2,6 +2,9 @@
 namespace McnHealthcare\ODM\Dynamodb;
 
 use Doctrine\Common\Annotations\Reader;
+use McnHealthcare\ODM\Dynamodb\Annotations\Item;
+use ReflectionException;
+use ReflectionClass;
 
 /**
  * Interface ItemReflectionInterface
@@ -16,160 +19,160 @@ interface ItemReflectionInterface
      *
      * @return array
      */
-    public function dehydrate($obj);
+    public function dehydrate(object $obj): array;
 
     /**
      * Changes object property values to match array.
      *
-     * @param array $array
-     * @param null $obj
+     * @param array $array Map of field value pairs.
+     * @param null|object $obj Object to receive field value pairs.
      *
-     * @return object|null
+     * @return object
      */
-    public function hydrate(array $array, $obj = null);
+    public function hydrate(array $array, object $obj = null): object;
 
     /**
-     * Annotation reader of the DynamoDB entity
+     * Annotation reader of the DynamoDB entity.
      *
      * @param Reader $reader
      *
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function parse(Reader $reader);
 
     /**
-     * Undocumented.
+     * Gets all partitioned values for a partitioned key field.
      *
-     * @param string $hashKeyName
-     * @param mixed $baseValue
-     *
-     * @return array
-     */
-    public function getAllPartitionedValues($hashKeyName, $baseValue);
-
-    /**
-     * Undocumented.
-     *
-     * @param object $obj
-     * @param string $propertyName
-     *
-     * @return mixed
-     */
-    public function getPropertyValue($obj, $propertyName);
-
-    /**
-     * Undocumented.
-     *
-     * @param object $obj
-     * @param string $propertyName
-     * @param mixed $value
-     */
-    public function updateProperty($obj, $propertyName, $value);
-
-    /**
-     * Undocumented.
-     *
-     * @return mixed
-     */
-    public function getAttributeTypes();
-
-    /**
-     * Undocumented.
+     * @param string $hashKeyName Name of partitioned key field.
+     * @param mixed $baseValue Base hash value.
      *
      * @return array
      */
-    public function getCasProperties();
+    public function getAllPartitionedValues(
+        string $hashKeyName,
+        $baseValue
+    ): array;
 
     /**
-     * Returns field name (attribute key for dynamodb) according to property name
+     * Gets value for item propery using reflection.
      *
-     * @param string $propertyName
+     * @param object $obj Item object that has the property.
+     * @param string $propertyName Name of property.
+     *
+     * @return mixed
+     */
+    public function getPropertyValue(object $obj, string $propertyName);
+
+    /**
+     * Sets value for item propery using reflection.
+     *
+     * @param object $obj Item object to set the property value for.
+     * @param string $propertyName Name of target property.
+     * @param mixed $value Target value.
+     */
+    public function updateProperty(object $obj, string $propertyName, $value);
+
+    /**
+     * Get map of attribute names to odm field types.
+     *
+     * @return array
+     */
+    public function getAttributeTypes(): array;
+
+    /**
+     * Gets map of attribute names to cas field options.
+     *
+     * @return array
+     */
+    public function getCasProperties(): array;
+
+    /**
+     * Returns field name (attribute key for dynamodb) according to property name.
+     *
+     * @param string $propertyName Application property name.
      *
      * @return string
      */
-    public function getFieldNameByPropertyName($propertyName);
+    public function getFieldNameByPropertyName(string $propertyName): string;
 
     /**
-     * Undocumented.
+     * Gets map of property names to atrribute names.
      *
-     * @return array a map of property name to attribute key
+     * @return array Map of property names to attribute names.
      */
-    public function getFieldNameMapping();
+    public function getFieldNameMapping(): array;
 
     /**
-     * Undocumented.
-     *
-     * @return array
-     */
-    public function getProjectedAttributes();
-
-    /**
-     * Undocumented.
-     *
-     * @return mixed
-     */
-    public function getItemClass();
-
-    /**
-     * Undocumented.
+     * Gets list of attribute names for a read only item.
      *
      * @return array
      */
-    public function getItemDefinition();
+    public function getProjectedAttributes(): array;
 
     /**
-     * Undocumented.
+     * Gets full name of item class.
+     *
+     * @return string
+     */
+    public function getItemClass(): string;
+
+    /**
+     * Gets item annotation object.
+     *
+     * @return Item
+     */
+    public function getItemDefinition(): Item;
+
+    /**
+     * Gets map of PartitionedHashKey annotation objects.
      *
      * @return PartitionedHashKey[]
      */
-    public function getPartitionedHashKeys();
+    public function getPartitionedHashKeys(): array;
 
     /**
-     * Undocumented.
+     * Gets hash for primarky key value.
      *
-     * @param object $obj
+     * @param array|object $obj
      *
      * @return string
      */
-    public function getPrimaryIdentifier($obj);
+    public function getPrimaryIdentifier($obj): string;
 
     /**
      * Undocumented.
      *
-     * @param object $obj
+     * @param array|object $obj Item data.
      * @param bool $asAttributeKeys
+     * Flags want attribute names instead of property names.
      *
      * @return array
      */
-    public function getPrimaryKeys($obj, $asAttributeKeys = true);
+    public function getPrimaryKeys(
+        $obj,
+        bool $asAttributeKeys = true
+    ): array;
 
     /**
-     * Undocumented.
+     * Gets native reflection class for item.
      *
-     * @return \ReflectionClass
+     * @return ReflectionClass
      */
-    public function getReflectionClass();
+    public function getReflectionClass(): ReflectionClass;
 
     /**
-     * Undocumented.
-     *
-     * @return string
-     */
-    public function getRepositoryClass();
-
-    /**
-     * Undocumented.
+     * Gets full name for item's repository class.
      *
      * @return string
      */
-    public function getTableName();
+    public function getRepositoryClass(): string;
 
     /**
-     * Undocumented.
+     * Gets full name for item table.
      *
-     * @return array
+     * @return string
      */
-    public function getActivityLoggingProperties();
+    public function getTableName(): string;
 
     /**
      * Gets map for all indexes for item.

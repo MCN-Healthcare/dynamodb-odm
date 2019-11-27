@@ -1,0 +1,37 @@
+happy path:
+    fixtures:
+        - domain: logger
+          class: 'Psr\Log\LoggerInterface'
+          fixture:
+            alert:
+                expects: [never]
+        - domain: itemManager
+          class: 'McnHealthcare\ODM\Dynamodb\ItemManager'
+          fixture:
+            getRepository:
+                expects: [never]
+        - domain: exprFactory
+          class: 'McnHealthcare\ODM\Dynamodb\Query\QueryExprFactoryInterface'
+          fixture:
+            __call:
+                expects: [never]
+        - domain: container
+          class: 'AppTests\Fixtures\MockContainer'
+          fixture:
+            get:
+                expects: [exactly, 3]
+                will:
+                    - returnValueMap
+                    -
+                        -
+                            - 'constructor-args'
+                            -
+                                - '$logger'
+                                - '$itemManager'
+                                - '$exprFactory'
+                        -
+                            - 'method-args'
+                            - []
+                        -
+                            - 'expected'
+                            - []

@@ -6,12 +6,14 @@ use Aws\AwsClientInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Annotations\Reader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use Doctrine\Common\Annotations\CachedReader;
 use Doctrine\Common\Cache\FilesystemCache;
 use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 use Symfony\Component\Finder\Finder;
 use McnHealthcare\ODM\Dynamodb\Annotations\ActivityLogging;
+use ReflectionClass;
 
 /**
  * Class ItemManager
@@ -35,19 +37,21 @@ class ItemManager implements ItemManagerInterface
     protected $defaultTablePrefix;
 
     /**
-     * @var AnnotationReader
+     * @var Reader
      */
     protected $reader;
 
     /**
-     * @var ItemReflection[]
      * Maps item class to item relfection
+     *
+     * @var ItemReflection[]
      */
     protected $itemReflections;
 
     /**
-     * @var ItemRepository[]
      * Maps item class to corresponding repository
+     *
+     * @var ItemRepository[]
      */
     protected $repositories = [];
 
@@ -110,9 +114,9 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function addNamespace($namespace, $srcDir)
+    public function addNamespace(string $namespace, string $srcDir)
     {
-        if ( ! \is_dir($srcDir)) {
+        if (! \is_dir($srcDir)) {
             $this->logger->warning(
                 sprintf("Directory %s doesn't exist.", $srcDir)
             );
@@ -157,9 +161,9 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function detach($item)
+    public function detach(object $item)
     {
-        if ( ! is_object($item)) {
+        if (! is_object($item)) {
             throw new ODMException("You can only detach a managed object!");
         }
         $this->getRepository(get_class($item))->detach($item);
@@ -178,8 +182,11 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function get($itemClass, array $keys, $consistentRead = false)
-    {
+    public function get(
+        string $itemClass,
+        array $keys,
+        bool $consistentRead = false
+    ): ?object {
         $item = $this->getRepository($itemClass)->get($keys, $consistentRead);
 
         return $item;
@@ -190,7 +197,7 @@ class ItemManager implements ItemManagerInterface
      *
      * @deprecated use shouldSkipCheckAndSet() instead
      */
-    public function isSkipCheckAndSet()
+    public function isSkipCheckAndSet(): bool
     {
         return $this->skipCheckAndSet;
     }
@@ -198,7 +205,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function setSkipCheckAndSet($skipCheckAndSet)
+    public function setSkipCheckAndSet(bool $skipCheckAndSet)
     {
         $this->skipCheckAndSet = $skipCheckAndSet;
     }
@@ -206,7 +213,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function loadAnnotationClass($className)
+    public function loadAnnotationClass(string $className): bool
     {
         if (class_exists($className)) {
             return true;
@@ -218,7 +225,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function persist($item)
+    public function persist(object $item)
     {
         $this->getRepository(get_class($item))->persist($item);
     }
@@ -226,7 +233,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function refresh($item, $persistIfNotManaged = false)
+    public function refresh(object $item, $persistIfNotManaged = false)
     {
         $this->getRepository(get_class($item))->refresh($item, $persistIfNotManaged);
     }
@@ -234,7 +241,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function remove($item)
+    public function remove(object $item)
     {
         $this->getRepository(get_class($item))->remove($item);
     }
@@ -242,7 +249,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function shouldSkipCheckAndSet()
+    public function shouldSkipCheckAndSet(): bool
     {
         return $this->skipCheckAndSet;
     }
@@ -250,7 +257,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function getDefaultTablePrefix()
+    public function getDefaultTablePrefix(): string
     {
         return $this->defaultTablePrefix;
     }
@@ -266,9 +273,10 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function getItemReflection($itemClass)
-    {
-        if ( ! isset($this->itemReflections[$itemClass])) {
+    public function getItemReflection(
+        string $itemClass
+    ): ItemReflectionInterface {
+        if (! isset($this->itemReflections[$itemClass])) {
             $reflection = new ItemReflection(
                 $itemClass,
                 $this->reservedAttributeNames,
@@ -286,7 +294,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function getPossibleItemClasses()
+    public function getPossibleItemClasses(): array
     {
         return $this->possibleItemClasses;
     }
@@ -294,7 +302,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function getReader()
+    public function getReader(): Reader
     {
         return $this->reader;
     }
@@ -302,30 +310,27 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function getRepository($itemClass)
+    public function getRepository(string $itemClass): ItemRepositoryInterface
     {
-        if ( ! isset($this->repositories[$itemClass])) {
+        if (! isset($this->repositories[$itemClass])) {
             $reflection = $this->getItemReflection($itemClass);
             $repoClass = $reflection->getRepositoryClass();
             $activityLoggingDetails = new ActivityLoggingDetails();
-            $repo = new $repoClass(
+            $this->repositories[$itemClass] = new $repoClass(
                 $reflection,
                 $this,
                 $activityLoggingDetails,
                 $this->logger
             );
-            $this->repositories[$itemClass] = $repo;
-        } else {
-            $repo = $this->repositories[$itemClass];
         }
 
-        return $repo;
+        return $this->repositories[$itemClass];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getReservedAttributeNames()
+    public function getReservedAttributeNames(): array
     {
         return $this->reservedAttributeNames;
     }
@@ -333,7 +338,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function setReservedAttributeNames($reservedAttributeNames)
+    public function setReservedAttributeNames(array $reservedAttributeNames)
     {
         $this->reservedAttributeNames = $reservedAttributeNames;
     }
@@ -341,9 +346,9 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function checkLoggable($entity)
+    public function checkLoggable($entity): bool
     {
-        $refClass = new \ReflectionClass($entity);
+        $refClass = new ReflectionClass($entity);
         $reader = new AnnotationReader();
 
         $classAnnotations = $reader->getClassAnnotations($refClass);
@@ -362,7 +367,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function getCacheDir()
+    public function getCacheDir(): string
     {
         return $this->cacheDir;
     }

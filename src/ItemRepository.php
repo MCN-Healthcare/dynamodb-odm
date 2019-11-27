@@ -43,7 +43,7 @@ class ItemRepository implements ItemRepositoryInterface
     protected $table;
 
     /**
-     * Maps object id to managed object
+     * Maps object id to managed object.
      *
      * @var ManagedItemState[]
      */
@@ -90,6 +90,13 @@ class ItemRepository implements ItemRepositoryInterface
     protected $logger;
 
     /**
+     * For query building and execution.
+     *
+     * @var QueryInterface
+     */
+    protected $query;
+
+    /**
      * ItemRepository constructor.
      *
      * @param ItemReflection $itemReflection Item metadata.
@@ -98,6 +105,7 @@ class ItemRepository implements ItemRepositoryInterface
      * Who data for logging to dynamodb.
      * @param LoggerInterface $logger
      * For writing log entries.
+     * @param QueryInterface $query Query building and execution.
      *
      * @throws \ReflectionException
      */
@@ -105,14 +113,20 @@ class ItemRepository implements ItemRepositoryInterface
         ItemReflection $itemReflection,
         ItemManager $itemManager,
         ActivityLoggingDetails $loggingDetails,
-        LoggerInterface $logger = null
+        LoggerInterface $logger = null,
+        QueryInterface $query = null
     ) {
         $this->itemManager = $itemManager;
         $this->itemReflection = $itemReflection;
         $this->logger = $logger ?? new NullLogger();
+        $this->query = $query ?? new Query($this->logger, $itemManager);
 
         // initialize table
-        $tableName = $itemManager->getDefaulttablePrefix() . $this->itemReflection->gettableName();
+        $tableName = sprintf(
+            '%s%s',
+            $itemManager->getDefaulttablePrefix(),
+            $this->itemReflection->gettableName()
+        );
         $this->tableName = $tableName;
 
         $this->table = new Table(

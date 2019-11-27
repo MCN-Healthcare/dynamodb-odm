@@ -4,58 +4,55 @@ namespace McnHealthcare\ODM\Dynamodb;
 /**
  * Interface ActivityLoggingDetailsInterface
  * Public API for activity logging details.
- *
- * #notes Docblock brief descriptions may be incorrect, as original authors faild
- * to provide useful documentation in the docblocks.
  */
 interface ActivityLoggingDetailsInterface
 {
     /**
-     * Undocumented.
+     * Gets full name of table being logged.
      *
-     * @return mixed
+     * @return null|string
      */
-    public function getLoggedTable();
+    public function getLoggedTable(): ?string;
 
     /**
-     * Undocumented.
+     * Sets table being logged.
      *
-     * @param $tableName
+     * @param string $tableName Full name of table being logged.
      */
-    public function setLoggedTable($tableName): void;
+    public function setLoggedTable(string $tableName): void;
 
     /**
-     * Undocumented.
+     * Gets identity associated with change.
      *
-     * @return mixed
+     * @return null|string
      */
-    public function getChangedBy();
+    public function getChangedBy(): ?string;
 
     /**
-     * Undocumented.
+     * Sets identity associated with change.
      *
-     * @param mixed $changedBy
+     * @param string $changedBy who/what caused a change.
      */
-    public function setChangedBy($changedBy): void;
+    public function setChangedBy(string $changedBy): void;
 
     /**
-     * Undocumented.
+     * Gets UTC offset in seconds.
      *
      * @return int
      */
     public function getOffset(): int;
 
     /**
-     * Undocumented.
+     * Sets UTC offset in seconds.
      *
-     * @param int $offset
+     * @param int $offset Offset from UTC in seconds.
      */
     public function setOffset(int $offset): void;
 
     /**
-     * Undocumented.
+     * Gets full name of table loggs are written to.
      *
      * @return string
      */
-    public function getLogTableName();
+    public function getLogTableName(): string;
 }

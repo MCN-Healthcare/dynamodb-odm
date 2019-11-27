@@ -19,20 +19,29 @@ use Doctrine\Common\Annotations\AnnotationRegistry;
 class ActivityLoggingDetails implements ActivityLoggingDetailsInterface
 {
     /**
-     * @var mixed
+     * Identity for who/what is making changes.
+     *
+     * @var null|string
      */
     private $changedBy;
 
     /**
+     * Full name of table being logged.
+     *
      * @var string
      */
     private $loggedTable;
 
     /**
+     * UTC offset in seconds.
+     *
      * @var int
      */
     private $offset;
+
     /**
+     * Full name of table being logged to.
+     *
      * @var string
      */
     private $logTable;
@@ -46,7 +55,7 @@ class ActivityLoggingDetails implements ActivityLoggingDetailsInterface
      * @param string $logTable    - the table that you're logging to
      */
     public function __construct(
-        $changedBy = null,
+        string $changedBy = null,
         string $loggedTable = null,
         int $offset = 0,
         string $logTable = 'ActivityLog'
@@ -60,7 +69,7 @@ class ActivityLoggingDetails implements ActivityLoggingDetailsInterface
     /**
      * {@inheritdoc}
      */
-    public function getLoggedTable()
+    public function getLoggedTable(): ?string
     {
         return $this->loggedTable;
     }
@@ -68,7 +77,7 @@ class ActivityLoggingDetails implements ActivityLoggingDetailsInterface
     /**
      * {@inheritdoc}
      */
-    public function setLoggedTable($tableName): void
+    public function setLoggedTable(string $tableName): void
     {
         $this->loggedTable = $tableName;
     }
@@ -76,7 +85,7 @@ class ActivityLoggingDetails implements ActivityLoggingDetailsInterface
     /**
      * {@inheritdoc}
      */
-    public function getChangedBy()
+    public function getChangedBy(): ?string
     {
         return $this->changedBy;
     }
@@ -84,7 +93,7 @@ class ActivityLoggingDetails implements ActivityLoggingDetailsInterface
     /**
      * {@inheritdoc}
      */
-    public function setChangedBy($changedBy): void
+    public function setChangedBy(string $changedBy): void
     {
         $this->changedBy = $changedBy;
     }
@@ -108,7 +117,7 @@ class ActivityLoggingDetails implements ActivityLoggingDetailsInterface
     /**
      * {@inheritdoc}
      */
-    public function getLogTableName()
+    public function getLogTableName(): string
     {
         return $this->logTable;
     }

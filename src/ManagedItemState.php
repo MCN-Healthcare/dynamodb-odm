@@ -1,69 +1,98 @@
 <?php
-/*
- * This file is part AWS DynamoDB ODM.
- * 
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 namespace McnHealthcare\ODM\Dynamodb;
 
 use McnHealthcare\ODM\Dynamodb\Annotations\Field;
 use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 
+/**
+ * Class ManagedItemState
+ * Objects that track managed items.
+ */
 class ManagedItemState
 {
     const STATE_NEW     = 1;
     const STATE_MANAGED = 2;
     const STATE_REMOVED = 3;
 
-    /** @var  ItemReflection */
+    /**
+     * @var ItemReflection
+     */
     protected $itemReflection;
+
+    /**
+     * @var object
+     */
     protected $item;
+
     /**
      * @var array
      */
     protected $originalData;
+
+    /**
+     * @var int
+     */
     protected $state = self::STATE_MANAGED;
 
-    public function __construct(ItemReflectionInterface $itemReflection, $item, array $originalData = [])
-    {
+    /**
+     * Initialize instance.
+     *
+     * @param ItemReflectionInterface $itemReflection
+     * Item metat data and meta functions.
+     * @param object $item Item being managed.
+     * @param array $originalData
+     * Item data before last flush.
+     */
+    public function __construct(
+        ItemReflectionInterface $itemReflection,
+        object $item,
+        array $originalData = []
+    ) {
         $this->itemReflection = $itemReflection;
         $this->item = $item;
         $this->originalData = $originalData;
     }
 
-    public function hasDirtyData()
+    /**
+     * Checks managed item has changed data.
+     *
+     * @return bool
+     */
+    public function hasDirtyData(): bool
     {
-        if ($this->state != self::STATE_MANAGED) {
-            return false;
-        }
-
-        $data = $this->itemReflection->dehydrate($this->item);
-        if ( ! $this->isDataEqual($data, $this->originalData)) {
-            return true;
-        } else {
-            return false;
-        }
+        return ($this->state == self::STATE_MANAGED
+            && ($data = $this->itemReflection->dehydrate($this->item))
+            && (! $this->isDataEqual($data, $this->originalData))
+        );
     }
 
     /**
-     * @return boolean
+     * Checks item is new.
+     *
+     * @return bool
      */
-    public function isNew()
+    public function isNew(): bool
     {
         return $this->state == self::STATE_NEW;
     }
 
     /**
-     * @return boolean
+     * Checks item is removed.
+     *
+     * @return bool
      */
-    public function isRemoved()
+    public function isRemoved(): bool
     {
         return $this->state == self::STATE_REMOVED;
     }
 
-    public function updatePartitionedHashKeys($hashFunction = null)
+    /**
+     * Updates item's odm partitioned hash keys.
+     *
+     * @param null|callable $hashFunction($propertyValue)
+     * Custom hashing function.
+     */
+    public function updatePartitionedHashKeys(callable $hashFunction = null)
     {
         foreach ($this->itemReflection->getPartitionedHashKeys() as $partitionedHashKey => $def) {
             $baseValue = $this->itemReflection->getPropertyValue($this->item, $def->baseField);
@@ -78,6 +107,11 @@ class ManagedItemState
         }
     }
 
+    /**
+     * Updates cas timestamps on object.
+     *
+     * @param int $timestampOffset UTC offset in seconds.
+     */
     public function updateCASTimestamps($timestampOffset = 0)
     {
         $now = time() + $timestampOffset;
@@ -89,9 +123,11 @@ class ManagedItemState
     }
 
     /**
+     * Gets map of cas field original data (or null).
+     *
      * @return array
      */
-    public function getCheckConditionData()
+    public function getCheckConditionData(): array
     {
         $checkValues = [];
         foreach ($this->itemReflection->getCasProperties() as $propertyName => $casType) {
@@ -103,15 +139,19 @@ class ManagedItemState
     }
 
     /**
-     * @return mixed
+     * Gets managed object.
+     *
+     * @return object
      */
-    public function getItem()
+    public function getItem(): object
     {
         return $this->item;
     }
 
     /**
-     * @param mixed $item
+     * Sets the managed item.
+     *
+     * @param object $item New item object.
      */
     public function setItem($item)
     {
@@ -119,44 +159,68 @@ class ManagedItemState
     }
 
     /**
+     * Ges item's original data.
+     *
      * @return array
      */
-    public function getOriginalData()
+    public function getOriginalData(): array
     {
         return $this->originalData;
     }
 
     /**
+     * Sets item's original data.
+     *
      * @param array $originalData
      */
-    public function setOriginalData($originalData)
+    public function setOriginalData(array $originalData)
     {
         $this->originalData = $originalData;
     }
 
+    /**
+     * Gets item field value from original data.
+     *
+     * @param string $key Item field name.
+     *
+     * @return null|mixed
+     */
     public function getOriginalValue($key)
     {
         if (isset($this->originalData[$key])) {
             return $this->originalData[$key];
-        } else {
-            return null;
         }
+
+        return null;
     }
 
     /**
+     * Sets item state.
+     *
      * @param int $state
      */
-    public function setState($state)
+    public function setState(int $state)
     {
         $this->state = $state;
     }
 
+    /**
+     * Updates original data for item.
+     */
     public function setUpdated()
     {
         $this->originalData = $this->itemReflection->dehydrate($this->item);
     }
 
-    protected function isDataEqual(&$a, &$b)
+    /**
+     * Checks 2 data elements are equal.
+     *
+     * @param mixed &$a First data array.
+     * @param mixed &$b Second data array.
+     *
+     * @return bool
+     */
+    protected function isDataEqual(&$a, &$b): bool
     {
         // empty string is considered null in dynamodb
         if (

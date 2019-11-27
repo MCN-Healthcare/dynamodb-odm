@@ -665,7 +665,7 @@ class ItemManagerTest extends TestCase
      */
     public function testCanLogActivity()
     {
-        $id = (microtime(true) * 10000);
+        $id = (string)(microtime(true) * 10000);
 
         $activityLog = new ActivityLog();
         $activityLog->setLoggedTable('TestTable');

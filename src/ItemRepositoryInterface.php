@@ -2,6 +2,8 @@
 namespace McnHealthcare\ODM\Dynamodb;
 
 use McnHealthcare\ODM\Dynamodb\Helpers\Index;
+use Doctrine\Common\Annotations\AnnotationException;
+use ReflectionException;
 
 /**
  * Interface DynamoDbOdmRepository
@@ -9,7 +11,6 @@ use McnHealthcare\ODM\Dynamodb\Helpers\Index;
  */
 interface ItemRepositoryInterface
 {
-
     /**
      * Performs get for a group of keys.
      *
@@ -18,7 +19,7 @@ interface ItemRepositoryInterface
      *
      * @return array
      */
-    public function batchGet($groupOfKeys, $isConsistentRead = false);
+    public function batchGet($groupOfKeys, bool $isConsistentRead = false);
 
     /**
      * Clear list of managed items.
@@ -28,15 +29,15 @@ interface ItemRepositoryInterface
     /**
      * Unmanages an instance of an item.
      *
-     * @param $obj
+     * @param object $obj Item to detach.
      */
-    public function detach($obj);
+    public function detach(object $obj);
 
     /**
      * Flush managed items to db.
      *
-     * @throws \Doctrine\Common\Annotations\AnnotationException
-     * @throws \ReflectionException
+     * @throws AnnotationException
+     * @throws ReflectionException
      */
     public function flush();
 

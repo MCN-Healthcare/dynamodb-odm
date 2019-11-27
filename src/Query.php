@@ -4,6 +4,7 @@ namespace McnHealthcare\ODM\Dynamodb;
 use Psr\Log\LoggerInterface;
 use McnHealthcare\ODM\Dynamodb\Query\QueryExprInterface;
 use McnHealthcare\ODM\Dynamodb\Query\QueryExprFactoryInterface;
+use McnHealthcare\ODM\Dynamodb\Query\QueryExprFactory;
 use McnHealthcare\ODM\Dynamodb\Annotations\Index;
 
 /**
@@ -27,7 +28,7 @@ class Query implements QueryInterface
     protected $consistentRead = false;
 
     /**
-     * Query expression builder.
+     * Query expression factory.
      *
      * @var QueryExprFactoryInterface
      */
@@ -129,11 +130,11 @@ class Query implements QueryInterface
     public function __construct(
         LoggerInterface $logger,
         ItemManagerInterface $itemManager,
-        QueryExprFactoryInterface $expr
+        QueryExprFactoryInterface $expr = null
     ) {
         $this->logger = $logger;
         $this->itemManager = $itemManager;
-        $this->expr = $expr;
+        $this->expr = $expr ?? new QueryExprFactory();
     }
 
     /**
@@ -264,6 +265,9 @@ class Query implements QueryInterface
         $fields = $expr->getFields();
         foreach ($this->getItemIndexes() as $index) {
             if ($this->canBindIndex($index, $fields)) {
+                if (0 < strlen($this->keyQuery)) {
+                    $this->filterQuery = $this->keyQuery;
+                }
                 $this->indexName = $index->name;
                 $this->keyQuery = $expr->expr();
 
