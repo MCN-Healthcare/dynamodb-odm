@@ -100,9 +100,10 @@ class ItemRepository implements ItemRepositoryInterface
     /**
      * ItemRepository constructor.
      *
-     * @param ItemReflection $itemReflection Item metadata.
-     * @param ItemManager $itemManager Item manager handling this repository.
-     * @param ActivityLoggingDetails $loggingDetails
+     * @param ItemReflectionInterface $itemReflection Item metadata.
+     * @param ItemManagerInterface $itemManager
+     * Item manager handling this repository.
+     * @param ActivityLoggingDetailsInterface $loggingDetails
      * Who data for logging to dynamodb.
      * @param LoggerInterface $logger
      * For writing log entries.
@@ -113,7 +114,7 @@ class ItemRepository implements ItemRepositoryInterface
     public function __construct(
         ItemReflectionInterface $itemReflection,
         ItemManagerInterface $itemManager,
-        ActivityLoggingDetails $loggingDetails,
+        ActivityLoggingDetailsInterface $loggingDetails,
         LoggerInterface $logger = null,
         QueryInterface $query = null
     ) {
