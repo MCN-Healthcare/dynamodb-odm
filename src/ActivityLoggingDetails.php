@@ -16,23 +16,32 @@ use Doctrine\Common\Annotations\AnnotationRegistry;
  *
  * @package McnHealthcare\ODM\Dynamodb
  */
-class ActivityLoggingDetails
+class ActivityLoggingDetails implements ActivityLoggingDetailsInterface
 {
     /**
-     * @var mixed
+     * Identity for who/what is making changes.
+     *
+     * @var null|string
      */
     private $changedBy;
 
     /**
+     * Full name of table being logged.
+     *
      * @var string
      */
     private $loggedTable;
 
     /**
+     * UTC offset in seconds.
+     *
      * @var int
      */
     private $offset;
+
     /**
+     * Full name of table being logged to.
+     *
      * @var string
      */
     private $logTable;
@@ -46,7 +55,7 @@ class ActivityLoggingDetails
      * @param string $logTable    - the table that you're logging to
      */
     public function __construct(
-        $changedBy = null,
+        string $changedBy = null,
         string $loggedTable = null,
         int $offset = 0,
         string $logTable = 'ActivityLog'
@@ -58,39 +67,39 @@ class ActivityLoggingDetails
     }
 
     /**
-     * @return mixed
+     * {@inheritdoc}
      */
-    public function getLoggedTable()
+    public function getLoggedTable(): ?string
     {
         return $this->loggedTable;
     }
 
     /**
-     * @param $tableName
+     * {@inheritdoc}
      */
-    public function setLoggedTable($tableName): void
+    public function setLoggedTable(string $tableName): void
     {
         $this->loggedTable = $tableName;
     }
 
     /**
-     * @return mixed
+     * {@inheritdoc}
      */
-    public function getChangedBy()
+    public function getChangedBy(): ?string
     {
         return $this->changedBy;
     }
 
     /**
-     * @param mixed $changedBy
+     * {@inheritdoc}
      */
-    public function setChangedBy($changedBy): void
+    public function setChangedBy(string $changedBy): void
     {
         $this->changedBy = $changedBy;
     }
 
     /**
-     * @return int
+     * {@inheritdoc}
      */
     public function getOffset(): int
     {
@@ -98,7 +107,7 @@ class ActivityLoggingDetails
     }
 
     /**
-     * @param int $offset
+     * {@inheritdoc}
      */
     public function setOffset(int $offset): void
     {
@@ -106,9 +115,9 @@ class ActivityLoggingDetails
     }
 
     /**
-     * @return string
+     * {@inheritdoc}
      */
-    public function getLogTableName()
+    public function getLogTableName(): string
     {
         return $this->logTable;
     }

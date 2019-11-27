@@ -3,6 +3,7 @@
 namespace McnHealthcare\ODM\Dynamodb\Ut;
 
 use Symfony\Component\Yaml\Yaml;
+use Aws\DynamoDb\DynamoDbClient;
 
 /**
  * Created by PhpStorm.
@@ -13,14 +14,17 @@ use Symfony\Component\Yaml\Yaml;
 class UTConfig
 {
     public static $dynamodbConfig = [];
+    public static $dynamodb = [];
     public static $tablePrefix    = 'odm-test-';
     
     public static function load()
     {
         $file = __DIR__ . "/ut.yml";
         $yml  = Yaml::parse(file_get_contents($file));
-        
         self::$dynamodbConfig = $yml['dynamodb'];
         self::$tablePrefix    = $yml['prefix'];
+        $outer = $yml['dynamodb']['McnHealthcare\ODM\Dynamodb\ItemManager'];
+        $cfg = $outer['arguments']['$dynamodbConfig'];
+        self::$dynamodb = new DynamodbClient($cfg);
     }
 }

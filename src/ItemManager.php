@@ -1,23 +1,25 @@
 <?php
-/*
- * This file is part AWS DynamoDB ODM.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 namespace McnHealthcare\ODM\Dynamodb;
 
+use Aws\DynamoDb\DynamoDbClient;
+use Aws\AwsClientInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Annotations\Reader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use Doctrine\Common\Annotations\CachedReader;
 use Doctrine\Common\Cache\FilesystemCache;
 use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 use Symfony\Component\Finder\Finder;
 use McnHealthcare\ODM\Dynamodb\Annotations\ActivityLogging;
-use Aws\DynamoDb\DynamoDbClient;
+use ReflectionClass;
 
-class ItemManager
+/**
+ * Class ItemManager
+ * Entity manager for dynamodb entities/items.
+ */
+class ItemManager implements ItemManagerInterface
 {
     /**
      * @var string[]
@@ -29,18 +31,27 @@ class ItemManager
      */
     protected $dynamoDbClient;
 
+    /**
+     * @var string
+     */
     protected $defaultTablePrefix;
 
-    /** @var  AnnotationReader */
-    protected $reader;
     /**
-     * @var ItemReflection[]
+     * @var Reader
+     */
+    protected $reader;
+
+    /**
      * Maps item class to item relfection
+     *
+     * @var ItemReflection[]
      */
     protected $itemReflections;
+
     /**
-     * @var ItemRepository[]
      * Maps item class to corresponding repository
+     *
+     * @var ItemRepository[]
      */
     protected $repositories = [];
 
@@ -54,18 +65,42 @@ class ItemManager
      */
     protected $skipCheckAndSet = false;
 
-    /** @var */
+    /**
+     * @var string
+     */
     private $cacheDir;
 
-    /** @var bool */
+    /**
+     * @var bool
+     */
     private $isDev;
 
-    public function __construct(DynamoDbClient $dynamoDbClient, $defaultTablePrefix, $cacheDir, $isDev = true)
-    {
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
+
+    /**
+     * Initialize instance.
+     *
+     * @param AwsClientInterface $dynamoDbClient Client for aws dynamodb api.
+     * @param string $defaultTablePrefix Default prefix for table names.
+     * @param string $cacheDir Path for directory to cache metadata.
+     * @param bool $isDev Flags development environment.
+     * @param LoggerInterface $logger For writing log entries.
+     */
+    public function __construct(
+        AwsClientInterface $dynamoDbClient,
+        string $defaultTablePrefix,
+        string $cacheDir,
+        bool $isDev = true,
+        LoggerInterface $logger = null
+    ) {
         $this->dynamoDbClient = $dynamoDbClient;
         $this->defaultTablePrefix = $defaultTablePrefix;
         $this->cacheDir = $cacheDir;
         $this->isDev = $isDev;
+        $this->logger = $logger ?? new NullLogger();
 
         AnnotationRegistry::registerLoader([$this, 'loadAnnotationClass']);
 
@@ -76,10 +111,15 @@ class ItemManager
         );
     }
 
-    public function addNamespace($namespace, $srcDir)
+    /**
+     * {@inheritdoc}
+     */
+    public function addNamespace(string $namespace, string $srcDir)
     {
-        if ( ! \is_dir($srcDir)) {
-            \mwarning("Directory %s doesn't exist.", $srcDir);
+        if (! \is_dir($srcDir)) {
+            $this->logger->warning(
+                sprintf("Directory %s doesn't exist.", $srcDir)
+            );
 
             return;
         }
@@ -94,11 +134,13 @@ class ItemManager
                 $splFileInfo->getBasename(".php")
             );
             $classname = preg_replace('#\\\\+#', '\\', $classname);
-            //mdebug("Class name is %s", $classname);
             $this->possibleItemClasses[] = $classname;
         }
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function addReservedAttributeNames(...$args)
     {
         foreach ($args as $arg) {
@@ -106,6 +148,9 @@ class ItemManager
         }
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function clear()
     {
         foreach ($this->repositories as $itemRepository) {
@@ -113,17 +158,19 @@ class ItemManager
         }
     }
 
-    public function detach($item)
+    /**
+     * {@inheritdoc}
+     */
+    public function detach(object $item)
     {
-        if ( ! is_object($item)) {
+        if (! is_object($item)) {
             throw new ODMException("You can only detach a managed object!");
         }
         $this->getRepository(get_class($item))->detach($item);
     }
 
     /**
-     * @throws \Doctrine\Common\Annotations\AnnotationException
-     * @throws \ReflectionException
+     * {@inheritdoc}
      */
     public function flush()
     {
@@ -132,37 +179,41 @@ class ItemManager
         }
     }
 
-    public function get($itemClass, array $keys, $consistentRead = false)
-    {
+    /**
+     * {@inheritdoc}
+     */
+    public function get(
+        string $itemClass,
+        array $keys,
+        bool $consistentRead = false
+    ): ?object {
         $item = $this->getRepository($itemClass)->get($keys, $consistentRead);
 
         return $item;
     }
 
     /**
-     * @return bool
+     * {@inheritdoc}
+     *
      * @deprecated use shouldSkipCheckAndSet() instead
      */
-    public function isSkipCheckAndSet()
+    public function isSkipCheckAndSet(): bool
     {
         return $this->skipCheckAndSet;
     }
 
     /**
-     * @param bool $skipCheckAndSet
+     * {@inheritdoc}
      */
-    public function setSkipCheckAndSet($skipCheckAndSet)
+    public function setSkipCheckAndSet(bool $skipCheckAndSet)
     {
         $this->skipCheckAndSet = $skipCheckAndSet;
     }
 
     /**
-     * @param $className
-     *
-     * @return bool
-     * @internal
+     * {@inheritdoc}
      */
-    public function loadAnnotationClass($className)
+    public function loadAnnotationClass(string $className): bool
     {
         if (class_exists($className)) {
             return true;
@@ -171,55 +222,66 @@ class ItemManager
         }
     }
 
-    public function persist($item)
+    /**
+     * {@inheritdoc}
+     */
+    public function persist(object $item)
     {
         $this->getRepository(get_class($item))->persist($item);
     }
 
-    public function refresh($item, $persistIfNotManaged = false)
+    /**
+     * {@inheritdoc}
+     */
+    public function refresh(object $item, $persistIfNotManaged = false)
     {
         $this->getRepository(get_class($item))->refresh($item, $persistIfNotManaged);
     }
 
-    public function remove($item)
+    /**
+     * {@inheritdoc}
+     */
+    public function remove(object $item)
     {
         $this->getRepository(get_class($item))->remove($item);
     }
 
     /**
-     * @return bool
+     * {@inheritdoc}
      */
-    public function shouldSkipCheckAndSet()
+    public function shouldSkipCheckAndSet(): bool
     {
         return $this->skipCheckAndSet;
     }
 
     /**
-     * @return mixed
+     * {@inheritdoc}
      */
-    public function getDefaultTablePrefix()
+    public function getDefaultTablePrefix(): string
     {
         return $this->defaultTablePrefix;
     }
 
     /**
-     * @return DynamoDbClient
+     * {@inheritdoc}
      */
-    public function getDynamoDbClient(): DynamoDbClient
+    public function getDynamoDbClient(): AwsClientInterface
     {
         return $this->dynamoDbClient;
     }
 
     /**
-     * @param $itemClass
-     *
-     * @return ItemReflection
-     * @throws \ReflectionException
+     * {@inheritdoc}
      */
-    public function getItemReflection($itemClass)
-    {
-        if ( ! isset($this->itemReflections[$itemClass])) {
-            $reflection = new ItemReflection($itemClass, $this->reservedAttributeNames);
+    public function getItemReflection(
+        string $itemClass
+    ): ItemReflectionInterface {
+        if (! isset($this->itemReflections[$itemClass])) {
+            $reflection = new ItemReflection(
+                $itemClass,
+                $this->reservedAttributeNames,
+                $this->logger
+            );
             $reflection->parse($this->reader);
             $this->itemReflections[$itemClass] = $reflection;
         } else {
@@ -230,78 +292,63 @@ class ItemManager
     }
 
     /**
-     * @return \string[]
+     * {@inheritdoc}
      */
-    public function getPossibleItemClasses()
+    public function getPossibleItemClasses(): array
     {
         return $this->possibleItemClasses;
     }
 
     /**
-     * @return AnnotationReader
+     * {@inheritdoc}
      */
-    public function getReader()
+    public function getReader(): Reader
     {
         return $this->reader;
     }
 
     /**
-     * @param $itemClass
-     *
-     * @return ItemRepository
-     * @throws \ReflectionException
+     * {@inheritdoc}
      */
-    public function getRepository($itemClass)
+    public function getRepository(string $itemClass): ItemRepositoryInterface
     {
-        if ( ! isset($this->repositories[$itemClass])) {
+        if (! isset($this->repositories[$itemClass])) {
             $reflection = $this->getItemReflection($itemClass);
             $repoClass = $reflection->getRepositoryClass();
             $activityLoggingDetails = new ActivityLoggingDetails();
-            $repo = new $repoClass(
+            $this->repositories[$itemClass] = new $repoClass(
                 $reflection,
                 $this,
-                $activityLoggingDetails
+                $activityLoggingDetails,
+                $this->logger
             );
-            $this->repositories[$itemClass] = $repo;
-        } else {
-            $repo = $this->repositories[$itemClass];
         }
 
-        return $repo;
+        return $this->repositories[$itemClass];
     }
 
     /**
-     * @return array
+     * {@inheritdoc}
      */
-    public function getReservedAttributeNames()
+    public function getReservedAttributeNames(): array
     {
         return $this->reservedAttributeNames;
     }
 
     /**
-     * @param array $reservedAttributeNames
+     * {@inheritdoc}
      */
-    public function setReservedAttributeNames($reservedAttributeNames)
+    public function setReservedAttributeNames(array $reservedAttributeNames)
     {
         $this->reservedAttributeNames = $reservedAttributeNames;
     }
 
     /**
-     * Check Loggable
-     *
-     * Check if the entity being passed has the annotation for Activity Logging and is enabled
-     *
-     * @see https://www.doctrine-project.org/projects/doctrine-annotations/en/1.6/custom.html
-     *
-     * @param $entity
-     *
-     * @return bool
-     * @throws \Doctrine\Common\Annotations\AnnotationException
-     * @throws \ReflectionException
+     * {@inheritdoc}
      */
-    public function checkLoggable($entity)
+    public function checkLoggable($entity): bool
     {
-        $refClass = new \ReflectionClass($entity);
+        $refClass = new ReflectionClass($entity);
         $reader = new AnnotationReader();
 
         $classAnnotations = $reader->getClassAnnotations($refClass);
@@ -318,15 +365,15 @@ class ItemManager
     }
 
     /**
-     * @return mixed
+     * {@inheritdoc}
      */
-    public function getCacheDir()
+    public function getCacheDir(): string
     {
         return $this->cacheDir;
     }
 
     /**
-     * @return bool
+     * {@inheritdoc}
      */
     public function isDev(): bool
     {

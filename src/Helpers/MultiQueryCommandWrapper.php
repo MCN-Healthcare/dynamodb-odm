@@ -89,7 +89,6 @@ class MultiQueryCommandWrapper
                     false,
                     $projectedFields
                 );
-                //mdebug("yielded %s", \GuzzleHttp\json_encode($paramsMapping));
                 yield $hashKeyValue => $promise;
             }
         };
@@ -115,7 +114,6 @@ class MultiQueryCommandWrapper
                 function (DynamoDbException $reason,
                     /** @noinspection PhpUnusedParameterInspection */
                           $hashKeyValue) {
-                    //mtrace($reason, "Error while processing hash key $hashKeyValue");
                     throw $reason;
                 }
             )->wait();

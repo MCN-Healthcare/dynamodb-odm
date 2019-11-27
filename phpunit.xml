@@ -8,7 +8,11 @@
         convertNoticesToExceptions="false"
 >
     <testsuites>
-        <testsuite name="basic">
+        <testsuite name="unit">
+            <file>ut/QueryTest.php</file>
+            <directory>ut/Query</directory>
+        </testsuite>
+        <testsuite name="functional">
             <file>ut/ItemManagerTest.php</file>
         </testsuite>
     </testsuites>

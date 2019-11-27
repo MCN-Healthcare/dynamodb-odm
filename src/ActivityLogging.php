@@ -5,12 +5,10 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace McnHealthcare\ODM\Dynamodb;
 
 use McnHealthcare\ODM\Dynamodb\Entity\ActivityLog;
-
-//use McnHealthcare\ODM\Dynamodb\Ut\ActivityLog;
+use Doctrine\Common\Annotations\AnnotationReader;
 
 /**
  * Class ActivityLogging
@@ -27,37 +25,66 @@ class ActivityLogging
 {
 
     /**
-     * @var \McnHealthcare\ODM\Dynamodb\ItemRepository
+     * Item reflection for table being logged.
+     *
+     * @var ItemReflectionInterface
      */
     private $itemReflection;
+
     /**
-     * @var ItemManager
+     * Item reflection for table being logged.
+     *
+     * @var ItemManagerInterface
      */
     private $itemManager;
+
     /**
+     * Table being logged.
+     *
      * @var string
      */
     private $loggedTable = null;
+
     /**
-     * @var mixed
+     * Identity of who/what made a chane that is logged.
+     *
+     * @var null|string
      */
     private $changedBy = null;
+
     /**
+     * UTC offset in seconds.
+     *
      * @var int
      */
     private $offset;
+
     /**
+     * Unknown use.
+     *
      * @var bool
      */
     public $enable;
 
-    /** @var ItemReflection */
+    /**
+     * Item reflection for table logs are written to.
+     *
+     * @var ItemReflectionInterface
+     */
     private $logItemReflection;
 
-    /** @var ItemManager */
+    /**
+     * Item manager for table logs are written to.
+     *
+     * @var ItemManagerInterface
+     */
     private $logItemManager;
 
-    /** @var \Doctrine\Common\Annotations\AnnotationReader */
+    /**
+     * For parsing annotations in the log table.
+     *
+     * @var AnnotationReader
+     */
     private $reader;
 
     /**
@@ -72,8 +99,8 @@ class ActivityLogging
      * @throws \ReflectionException
      */
     public function __construct(
-        ItemReflection $itemReflection,
-        ItemManager $itemManager,
+        ItemReflectionInterface $itemReflection,
+        ItemManagerInterface $itemManager,
         $changedBy = null,
         string $loggedTable = "",
         int $offset = 0
@@ -90,7 +117,7 @@ class ActivityLogging
             $this->itemManager->getCacheDir(),
             $this->itemManager->isDev()
         );
-        $this->logItemReflection = new ItemReflection(ActivityLog::class, null);
+        $this->logItemReflection = new ItemReflection(ActivityLog::class);
 
         $this->reader = $this->logItemManager->getReader();
 
@@ -99,9 +126,11 @@ class ActivityLogging
     }
 
     /**
-     * @return \McnHealthcare\ODM\Dynamodb\ItemRepository
+     * Gets item repository for item being logged.
+     *
+     * @return ItemRepositoryInterface
      */
-    private function getItemRepository(): ItemRepository
+    private function getItemRepository(): ItemRepositoryInterface
     {
         return new ItemRepository(
             $this->itemReflection,
@@ -110,7 +139,12 @@ class ActivityLogging
         );
     }
 
-    private function getLogRepository(): ItemRepository
+    /**
+     * Gets item repository for log items.
+     *
+     * @return ItemRepositoryInterface
+     */
+    private function getLogRepository(): ItemRepositoryInterface
     {
         $logRepository = new ItemRepository(
             $this->logItemReflection,
@@ -121,8 +155,13 @@ class ActivityLogging
         return $logRepository;
     }
 
-    private function getActivityLoggingDetails()
-    {
+    /**
+     * Gets standard information written to log items.
+     *
+     * @return ActivityLoggingDetailsInterface
+     */
+    private function getActivityLoggingDetails(
+    ): ActivityLoggingDetailsInterface {
         $activityLoggingDetails = new ActivityLoggingDetails(
             $this->changedBy,
             $this->loggedTable,
@@ -135,11 +174,11 @@ class ActivityLogging
     /**
      * Get the previous value of an object before being updated
      *
-     * @param $keys
+     * @param array $keys
      *
-     * @return mixed|object|null
+     * @return object|null
      */
-    public function getPreviousValue($keys)
+    public function getPreviousValue(array $keys): ?object
     {
         $repo = $this->getItemRepository();
         $previousValue = $repo->get($keys);
@@ -148,13 +187,13 @@ class ActivityLogging
     }
 
     /**
-     * Insert into the activity log table the previous values
+     * Insert into the activity log table the previous values.
      *
-     * @param $dataObj - The Data Object that is being updated
+     * @param object $dataObj - The Data Object that is being updated.
      *
      * @return bool
      */
-    public function insertIntoActivityLog($dataObj)
+    public function insertIntoActivityLog(object $dataObj): bool
     {
         // get the item repository
         $repo = $this->getItemRepository();
@@ -180,7 +219,15 @@ class ActivityLogging
         return true;
     }
 
-    private function cleanArray(array $array)
+    /**
+     * Gets a copy of an array
+     * with non-printable characters in the array keys and values are removed.
+     *
+     * @param array $array Array to clean.
+     *
+     * @return array
+     */
+    private function cleanArray(array $array): array
     {
         $clean_array = [];
 
@@ -218,7 +265,8 @@ class ActivityLogging
     }
 
     /**
-     * Get the user that changed the tablet hat is being logged for activity, if null/not set, try to set it
+     * Get the user that changed the tablet that is being logged for activity.
+     * If null/not set, try to set it.
      *
      * @return string|null
      */
@@ -237,12 +285,22 @@ class ActivityLogging
         return $this->changedBy;
     }
 
-    public function getLogItemReflection()
+    /**
+     * Gets item reflection for log items.
+     *
+     * @return ItemReflectionInterface
+     */
+    public function getLogItemReflection(): ItemReflectionInterface
     {
         return $this->logItemReflection;
     }
 
-    public function getLogItemManager()
+    /**
+     * Gets item manager for log items.
+     *
+     * @return ItemManagerInterface
+     */
+    public function getLogItemManager(): ItemManagerInterface
     {
         return $this->logItemManager;
     }

@@ -8,6 +8,12 @@
             "url": "https://github.com/MCN-Healthcare/dynamodb-odm"
         }
     ],
+    "repositories-dev" : [
+        {
+            "type" : "vcs",
+            "url" : "https://github.com/mcn-fredw/mock-from-yaml-php"
+        }
+    ],
     "require"     : {
         "php" : "^7.1.3",
         "doctrine/annotations" : "^1.6",
@@ -20,7 +26,8 @@
         "liip/functional-test-bundle": "^3.0.0",
         "phpunit/phpunit": "^8",
         "symfony/phpunit-bridge": "^4.3",
-        "symfony/yaml": "^4.3"
+        "symfony/yaml": "^4.3",
+        "mockfromyaml/mockfromyaml" : ">=2.0.1"
     },
     "license"     : "MIT",
     "autoload"    : {
@@ -31,6 +38,11 @@
     "autoload-dev": {
         "psr-4": {
             "McnHealthcare\\ODM\\Dynamodb\\Ut\\": "ut/"
+        }
+    },
+    "config" : {
+        "preferred-install" : {
+            "*" : "dist"
         }
     },
     "bin"         : [

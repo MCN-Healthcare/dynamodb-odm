@@ -6,10 +6,10 @@
  * Time: 16:17
  */
 
-namespace Oasis\Mlib\ODM\Dynamodb\Ut;
+namespace McnHealthcare\ODM\Dynamodb\Ut;
 
-use Oasis\Mlib\ODM\Dynamodb\Annotations\Field;
-use Oasis\Mlib\ODM\Dynamodb\Annotations\Item;
+use McnHealthcare\ODM\Dynamodb\Annotations\Field;
+use McnHealthcare\ODM\Dynamodb\Annotations\Item;
 
 /**
  * Class ConsoleGame
@@ -21,7 +21,7 @@ use Oasis\Mlib\ODM\Dynamodb\Annotations\Item;
  *          {"family", "language"}
  *     }
  * )
- * @package Oasis\Mlib\ODM\Dynamodb\Ut
+ * @package McnHealthcare\ODM\Dynamodb\Ut
  */
 class ConsoleGame extends Game
 {

@@ -9,23 +9,49 @@
 namespace McnHealthcare\ODM\Dynamodb\Helpers;
 
 use Aws\DynamoDb\DynamoDbClient;
+use Aws\AwsClientInterface;
 use Aws\Result;
+use Psr\Log\loggerInterface;
+use Psr\Log\Nulllogger;
 
+/**
+ * Class DynamoDbManager
+ * High level dynamodb management functions.
+ */
 class DynamoDbManager
 {
-    /** @var array */
+    /**
+     * @var array
+     */
     protected $config;
-    /** @var  DynamoDbClient */
+    /**
+     * @var DynamoDbClient
+     */
     protected $db;
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
 
-    public function __construct(array $awsConfig)
-    {
-        $dp       = new AwsConfigDataProvider($awsConfig, '2012-08-10');
-        $this->db = new DynamoDbClient($dp->getConfig());
+    /**
+     * Initialize instance.
+     *
+     * @param AwsClientInterface $client Dynamodb client.
+     * @param LoggerInterface $logger Forwriting log entries.
+     */
+    public function __construct(
+        AwsClientInterface $client,
+        LoggerInterface $logger = null
+    ) {
+        $this->db = $client;
+        $this->logger = $logger ?? new NullLogger();
     }
 
     /**
-     * @param string $pattern a pattern that table name should match, if emtpy, all tables will be returned
+     * Gets list of dynamodb tables the client can access.
+     *
+     * @param string $pattern a pattern that table name should match,
+     * if emtpy, all tables will be returned
      *
      * @return array
      */
@@ -71,16 +97,17 @@ class DynamoDbManager
      * @param int             $writeCapacity
      *
      * @return bool
+     *
      * @internal param Index $primaryKey
      */
-    public function createTable($tableName,
-                                Index $primaryIndex,
-                                array $localSecondaryIndices = [],
-                                array $globalSecondaryIndices = [],
-                                $readCapacity = 5,
-                                $writeCapacity = 5
-    )
-    {
+    public function createTable(
+        $tableName,
+        Index $primaryIndex,
+        array $localSecondaryIndices = [],
+        array $globalSecondaryIndices = [],
+        $readCapacity = 5,
+        $writeCapacity = 5
+    ) {
         $attrDef = $primaryIndex->getAttributeDefinitions();
         foreach ($globalSecondaryIndices as $gsi) {
             $gsiDef  = $gsi->getAttributeDefinitions();
@@ -223,7 +250,6 @@ class DynamoDbManager
                             ) {
                                 foreach ($result['Table']['GlobalSecondaryIndexes'] as $gsi) {
                                     if ($gsi['IndexStatus'] != "ACTIVE") {
-                                        //mdebug("gsi %s not ready, status = %s", $gsi['IndexName'], $gsi['IndexStatus']);
 
                                         return;
                                     }
@@ -232,10 +258,6 @@ class DynamoDbManager
 
                             $k = array_search($tableName, $tableNames);
                             array_splice($tableNames, $k, 1);
-                            //var_dump($tableNames);
-                        }
-                        else {
-                            //mdebug("Table %s not ready, status = %s", $tableName, $result['Table']['TableStatus']);
                         }
                     }
                 );
@@ -245,7 +267,10 @@ class DynamoDbManager
             \GuzzleHttp\Promise\all($promises)->wait();
             if ($tableNames) {
                 if (time() - $started > $timeout) {
-                    mwarning("Timed out, some tables are still in unready state: %s", implode(",", $tableNames));
+                    $this->logger->warning(
+                        "Timed out, some tables are still in unready state",
+                        $tableNames
+                    );
 
                     return false;
                 }

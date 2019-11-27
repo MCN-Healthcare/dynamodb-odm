@@ -8,78 +8,132 @@
 
 namespace McnHealthcare\ODM\Dynamodb;
 
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use McnHealthcare\ODM\Dynamodb\Helpers\Index;
 use McnHealthcare\ODM\Dynamodb\Helpers\Table;
 use McnHealthcare\ODM\Dynamodb\Exceptions\DataConsistencyException;
 use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 use McnHealthcare\ODM\Dynamodb\Exceptions\UnderlyingDatabaseException;
 
-class ItemRepository
+/**
+ * Class ItemRepository
+ * Repository for odm entities/items.
+ */
+class ItemRepository implements ItemRepositoryInterface
 {
-    /** @var  ItemManager */
+    /**
+     * @var ItemManager
+     */
     protected $itemManager;
 
-    /** @var ItemReflection */
+    /**
+     * @var ItemReflection
+     */
     protected $itemReflection;
 
-    /** @var ActivityLoggingDetails */
-    private $LoggingDetails;
+    /**
+     * @var ActivityLoggingDetails
+     */
+    private $loggingDetails;
 
-    /** @var  Table */
+    /**
+     * @var Table
+     */
     protected $table;
 
     /**
+     * Maps object id to managed object.
+     *
      * @var ManagedItemState[]
-     * Maps object id to managed object
      */
     protected $itemManaged = [];
 
-    /** @var string */
+    /**
+     * @var string
+     */
     private $loggedtable;
 
-    /** @var string */
+    /**
+     * @var string
+     */
     private $changedBy;
 
-    /** @var string */
+    /**
+     * @var string
+     */
     private $tableName;
 
-    /** @var string */
+    /**
+     * @var string
+     */
     private $loggabletable;
 
-    /** @var ItemManager */
+    /**
+     * @var ItemManager
+     */
     private $logItemManager;
 
-    /** @var ItemReflection */
+    /**
+     * @var ItemReflection
+     */
     private $logItemReflection;
 
-    /** @var ManagedItemState[] */
+    /**
+     * @var ManagedItemState[]
+     */
     private $itemLogManaged = [];
+
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
+
+    /**
+     * For query building and execution.
+     *
+     * @var QueryInterface
+     */
+    protected $query;
 
     /**
      * ItemRepository constructor.
      *
-     * @param ItemReflection         $itemReflection
-     * @param ItemManager            $itemManager
-     * @param ActivityLoggingDetails $LoggingDetails
+     * @param ItemReflection $itemReflection Item metadata.
+     * @param ItemManager $itemManager Item manager handling this repository.
+     * @param ActivityLoggingDetails $loggingDetails
+     * Who data for logging to dynamodb.
+     * @param LoggerInterface $logger
+     * For writing log entries.
+     * @param QueryInterface $query Query building and execution.
      *
      * @throws \ReflectionException
      */
     public function __construct(
         ItemReflection $itemReflection,
         ItemManager $itemManager,
-        ActivityLoggingDetails $LoggingDetails
+        ActivityLoggingDetails $loggingDetails,
+        LoggerInterface $logger = null,
+        QueryInterface $query = null
     ) {
         $this->itemManager = $itemManager;
         $this->itemReflection = $itemReflection;
+        $this->logger = $logger ?? new NullLogger();
+        $this->query = $query ?? new Query($this->logger, $itemManager);
 
         // initialize table
-        $tableName = $itemManager->getDefaulttablePrefix() . $this->itemReflection->gettableName();
+        $tableName = sprintf(
+            '%s%s',
+            $itemManager->getDefaulttablePrefix(),
+            $this->itemReflection->gettableName()
+        );
         $this->tableName = $tableName;
 
         $this->table = new Table(
             $itemManager->getDynamoDbClient(),
             $tableName,
-            $this->itemReflection->getAttributeTypes()
+            $this->itemReflection->getAttributeTypes(),
+            $this->logger
         );
 
         // Activity Logging
@@ -91,24 +145,22 @@ class ItemRepository
         $this->logItemManager = $activityLogging->getLogItemManager();
         $this->logItemReflection = $activityLogging->getLogItemReflection();
 
-        $LoggingDetails->setLoggedtable($tableName);
-        $this->loggedtable = $LoggingDetails->getLoggedtable();
-        $this->changedBy = $LoggingDetails->getChangedBy();
-        $this->LoggingDetails = $LoggingDetails;
-        $logtableName = $itemManager->getDefaulttablePrefix() . $LoggingDetails->getLogtableName();
+        $loggingDetails->setLoggedtable($tableName);
+        $this->loggedtable = $loggingDetails->getLoggedtable();
+        $this->changedBy = $loggingDetails->getChangedBy();
+        $this->loggingDetails = $loggingDetails;
+        $logtableName = $itemManager->getDefaulttablePrefix() . $loggingDetails->getLogtableName();
 
         $this->loggabletable = new Table(
             $itemManager->getDynamoDbClient(),
             $logtableName,
-            $this->itemReflection->getAttributeTypes()
+            $this->itemReflection->getAttributeTypes(),
+            $this->logger
         );
     }
 
     /**
-     * @param      $groupOfKeys
-     * @param bool $isConsistentRead
-     *
-     * @return array
+     * {@inheritdoc}
      */
     public function batchGet($groupOfKeys, $isConsistentRead = false)
     {
@@ -146,7 +198,7 @@ class ItemRepository
     }
 
     /**
-     *
+     * {@inheritdoc}
      */
     public function clear()
     {
@@ -154,7 +206,7 @@ class ItemRepository
     }
 
     /**
-     * @param $obj
+     * {@inheritdoc}
      */
     public function detach($obj)
     {
@@ -172,8 +224,7 @@ class ItemRepository
     }
 
     /**
-     * @throws \Doctrine\Common\Annotations\AnnotationException
-     * @throws \ReflectionException
+     * {@inheritdoc}
      */
     public function flush()
     {
@@ -192,7 +243,7 @@ class ItemRepository
             /* */
             // Activity Log - Check if the activity on the entity should be logged, and if so, write it to the logging table!
             if ($this->itemManager->checkLoggable($this->itemReflection->getItemClass())) {
-                $this->logActivity($item, $this->LoggingDetails->getOffset());
+                $this->logActivity($item, $this->loggingDetails->getOffset());
             }
 
             // Delete
@@ -293,10 +344,7 @@ class ItemRepository
     }
 
     /**
-     * @param      $keys
-     * @param bool $isConsistentRead
-     *
-     * @return mixed|object|null
+     * {@inheritdoc}
      */
     public function get($keys, $isConsistentRead = false)
     {
@@ -337,17 +385,7 @@ class ItemRepository
     }
 
     /**
-     * @param callable $callback
-     * @param          $hashKey
-     * @param          $hashKeyValues
-     * @param          $rangeConditions
-     * @param array    $params
-     * @param          $indexName
-     * @param string   $filterExpression
-     * @param int      $evaluationLimit
-     * @param bool     $isConsistentRead
-     * @param bool     $isAscendingOrder
-     * @param int      $concurrency
+     * {@inheritdoc}
      */
     public function multiQueryAndRun(
         callable $callback,
@@ -395,16 +433,7 @@ class ItemRepository
     }
 
     /**
-     * @param        $hashKey
-     * @param        $hashKeyValues
-     * @param        $rangeConditions
-     * @param array  $params
-     * @param        $indexName
-     * @param string $filterExpression
-     * @param bool   $isConsistentRead
-     * @param int    $concurrency
-     *
-     * @return int
+     * {@inheritdoc}
      */
     public function multiQueryCount(
         $hashKey,
@@ -450,13 +479,7 @@ class ItemRepository
     }
 
     /**
-     * @param          $parallel
-     * @param callable $callback
-     * @param string   $conditions
-     * @param array    $params
-     * @param bool     $indexName
-     * @param bool     $isConsistentRead
-     * @param bool     $isAscendingOrder
+     * {@inheritdoc}
      */
     public function parallelScanAndRun(
         $parallel,
@@ -486,7 +509,7 @@ class ItemRepository
     }
 
     /**
-     * @param $obj
+     * {@inheritdoc}
      */
     public function persist($obj)
     {
@@ -509,12 +532,7 @@ class ItemRepository
     }
 
     /**
-     * Persist for the Activity Logger
-     *
-     * @param $obj
-     *
-     * @author Derek Boerger <derek.boerger@mcnhealthcare.com>
-     *
+     * {@inheritdoc}
      */
     public function persistLoggable($obj)
     {
@@ -537,16 +555,7 @@ class ItemRepository
     }
 
     /**
-     * @param        $conditions
-     * @param array  $params
-     * @param bool   $indexName
-     * @param string $filterExpression
-     * @param null   $lastKey
-     * @param int    $evaluationLimit
-     * @param bool   $isConsistentRead
-     * @param bool   $isAscendingOrder
-     *
-     * @return array
+     * {@inheritdoc}
      */
     public function query(
         $conditions,
@@ -581,14 +590,7 @@ class ItemRepository
     }
 
     /**
-     * @param string $conditions
-     * @param array  $params
-     * @param bool   $indexName
-     * @param string $filterExpression
-     * @param bool   $isConsistentRead
-     * @param bool   $isAscendingOrder
-     *
-     * @return \SplDoublyLinkedList
+     * {@inheritdoc}
      */
     public function queryAll(
         $conditions = '',
@@ -615,13 +617,7 @@ class ItemRepository
     }
 
     /**
-     * @param callable $callback
-     * @param string   $conditions
-     * @param array    $params
-     * @param bool     $indexName
-     * @param string   $filterExpression
-     * @param bool     $isConsistentRead
-     * @param bool     $isAscendingOrder
+     * {@inheritdoc}
      */
     public function queryAndRun(
         callable $callback,
@@ -651,13 +647,7 @@ class ItemRepository
     }
 
     /**
-     * @param        $conditions
-     * @param array  $params
-     * @param bool   $indexName
-     * @param string $filterExpression
-     * @param bool   $isConsistentRead
-     *
-     * @return array|bool|int
+     * {@inheritdoc}
      */
     public function queryCount(
         $conditions,
@@ -679,53 +669,44 @@ class ItemRepository
     }
 
     /**
-     * @param      $obj
-     * @param bool $persistIfNotManaged
+     * {@inheritdoc}
      */
     public function refresh($obj, $persistIfNotManaged = false)
     {
-        if ( ! $this->itemReflection->getReflectionClass()->isInstance($obj)) {
+        if (! $this->itemReflection->getReflectionClass()->isInstance($obj)) {
             throw new ODMException(
                 "Object refreshed is not of correct type, expected: " . $this->itemReflection->getItemClass()
             );
         }
 
-        // 2017-03-24: we can refresh something that's not managed
-        //$id = $this->itemReflection->getPrimaryIdentifier($obj);
-        //if (!isset($this->itemManaged[$id])) {
-        //    throw new ODMException("Object is not managed: " . print_r($obj, true));
-        //}
-        // end of change 2017-03-24
-
         $id = $this->itemReflection->getPrimaryIdentifier($obj);
-        if ( ! isset($this->itemManaged[$id])) {
-            if ($persistIfNotManaged) {
-                $this->itemManaged[$id] = new ManagedItemState($this->itemReflection, $obj);
-            } else {
+        if (! isset($this->itemManaged[$id])) {
+            if (! $persistIfNotManaged) {
                 throw new ODMException("Object is not managed: " . print_r($obj, true));
             }
+            $this->itemManaged[$id] = new ManagedItemState($this->itemReflection, $obj);
         }
 
         $objRefreshed = $this->get($this->itemReflection->getPrimaryKeys($obj, false), true);
 
-        if ( ! $objRefreshed && $persistIfNotManaged) {
+        if (! $objRefreshed && $persistIfNotManaged) {
             $this->itemManaged[$id]->setState(ManagedItemState::STATE_NEW);
         }
 
     }
 
     /**
-     * @param $obj
+     * {@inheritdoc}
      */
     public function remove($obj)
     {
-        if ( ! $this->itemReflection->getReflectionClass()->isInstance($obj)) {
+        if (! $this->itemReflection->getReflectionClass()->isInstance($obj)) {
             throw new ODMException(
                 "Object removed is not of correct type, expected: " . $this->itemReflection->getItemClass()
             );
         }
         $id = $this->itemReflection->getPrimaryIdentifier($obj);
-        if ( ! isset($this->itemManaged[$id])) {
+        if (! isset($this->itemManaged[$id])) {
             throw new ODMException("Object is not managed: " . print_r($obj, true));
         }
 
@@ -733,8 +714,7 @@ class ItemRepository
     }
 
     /**
-     * @throws \Doctrine\Common\Annotations\AnnotationException
-     * @throws \ReflectionException
+     * {@inheritdoc}
      */
     public function removeAll()
     {
@@ -768,7 +748,7 @@ class ItemRepository
     }
 
     /**
-     * @param $keys
+     * {@inheritdoc}
      */
     public function removeById($keys)
     {
@@ -779,15 +759,7 @@ class ItemRepository
     }
 
     /**
-     * @param string $conditions
-     * @param array  $params
-     * @param bool   $indexName
-     * @param null   $lastKey
-     * @param int    $evaluationLimit
-     * @param bool   $isConsistentRead
-     * @param bool   $isAscendingOrder
-     *
-     * @return array
+     * {@inheritdoc}
      */
     public function scan(
         $conditions = '',
@@ -820,14 +792,7 @@ class ItemRepository
     }
 
     /**
-     * @param string $conditions
-     * @param array  $params
-     * @param bool   $indexName
-     * @param bool   $isConsistentRead
-     * @param bool   $isAscendingOrder
-     * @param int    $parallel
-     *
-     * @return \SplDoublyLinkedList
+     * {@inheritdoc}
      */
     public function scanAll(
         $conditions = '',
@@ -854,13 +819,7 @@ class ItemRepository
     }
 
     /**
-     * @param callable $callback
-     * @param string   $conditions
-     * @param array    $params
-     * @param bool     $indexName
-     * @param bool     $isConsistentRead
-     * @param bool     $isAscendingOrder
-     * @param int      $parallel
+     * {@inheritdoc}
      */
     public function scanAndRun(
         callable $callback,
@@ -908,13 +867,7 @@ class ItemRepository
     }
 
     /**
-     * @param string $conditions
-     * @param array  $params
-     * @param bool   $indexName
-     * @param bool   $isConsistentRead
-     * @param int    $parallel
-     *
-     * @return int
+     * {@inheritdoc}
      */
     public function scanCount(
         $conditions = '',
@@ -936,10 +889,7 @@ class ItemRepository
     }
 
     /**
-     * @return table
-     * @deprecated  this interface might be removed any time in the future
-     *
-     * @internal    only for advanced user, avoid using the table client directly whenever possible.
+     * {@inheritdoc}
      */
     public function gettable()
     {
@@ -948,17 +898,7 @@ class ItemRepository
 
 
     /**
-     * Log Activity
-     *
-     * Logs the activity of a specific table and places that into another logging table
-     *
-     * @param     $dataObj
-     * @param int $offset
-     *
-     * @return bool
-     * @throws \ReflectionException
-     * @author Derek Boerger <derek.boerger@mcnhealthcare.com>
-     *
+     * {@inheritdoc}
      */
     public function logActivity($dataObj, int $offset = 0)
     {
@@ -1007,7 +947,8 @@ class ItemRepository
         if (isset($this->itemManaged[$id])) {
             if ($this->itemManaged[$id]->isNew()) {
                 throw new ODMException("Conflict! Fetched remote data is also persisted. " . json_encode($resultData));
-            } elseif ($this->itemManaged[$id]->isRemoved()) {
+            }
+            if ($this->itemManaged[$id]->isRemoved()) {
                 throw new ODMException("Conflict! Fetched remote data is also removed. " . json_encode($resultData));
             }
 
@@ -1023,7 +964,7 @@ class ItemRepository
     }
 
     /**
-     * @return string
+     * {@inheritdoc}
      */
     public function gettableName(): string
     {
@@ -1031,10 +972,18 @@ class ItemRepository
     }
 
     /**
-     * @param string $tableName
+     * {@inheritdoc}
      */
     public function settableName(string $tableName): void
     {
         $this->tableName = $tableName;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getQueryBuilder(): QueryInterface
+    {
+        return clone $this->query;
     }
 }

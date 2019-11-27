@@ -8,17 +8,24 @@
 
 namespace McnHealthcare\ODM\Dynamodb\Console\Commands;
 
-use Oasis\Mlib\AwsWrappers\DynamoDbIndex;
-use Oasis\Mlib\AwsWrappers\DynamoDbManager;
-use Oasis\Mlib\AwsWrappers\DynamoDbTable;
+use McnHealthcare\ODM\Dynamodb\Helpers\DynamoDbManager;
+use McnHealthcare\ODM\Dynamodb\Helpers\Index;
+use McnHealthcare\ODM\Dynamodb\Helpers\Table;
 use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 use McnHealthcare\ODM\Dynamodb\ItemReflection;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * Class UpdateSchemaCommand
+ * Console command to update dynamodb schema.
+ */
 class UpdateSchemaCommand extends AbstractSchemaCommand
 {
+    /**
+     * {@inheritdoc}
+     */
     protected function configure()
     {
         parent::configure();
@@ -33,6 +40,9 @@ class UpdateSchemaCommand extends AbstractSchemaCommand
              );
     }
 
+    /**
+     * {@inheritdoc}
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $isDryRun = $input->getOption('dry-run');
@@ -93,7 +103,11 @@ class UpdateSchemaCommand extends AbstractSchemaCommand
                 };
             } else {
                 // will update
-                $table = new DynamoDbTable($this->getItemManager()->getDynamodbConfig(), $tableName);
+                $table = new Table(
+                    $this->getItemManager()->getDynamodbConfig(),
+                    $tableName,
+                    $this->logger
+                );
 
                 $itemDef = $reflection->getItemDefinition();
                 $attributeTypes = $reflection->getAttributeTypes();
@@ -207,7 +221,7 @@ class UpdateSchemaCommand extends AbstractSchemaCommand
                     }
                 }
                 if ($oldGsis) {
-                    /** @var DynamoDbIndex $removedGsi */
+                    /** @var Index $removedGsi */
                     foreach ($oldGsis as $removedGsi) {
                         $gsiChanges[] = function () use (
                             $isDryRun,

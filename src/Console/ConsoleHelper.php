@@ -13,7 +13,13 @@ use McnHealthcare\ODM\Dynamodb\Console\Commands\DropSchemaCommand;
 use McnHealthcare\ODM\Dynamodb\Console\Commands\UpdateSchemaCommand;
 use McnHealthcare\ODM\Dynamodb\ItemManager;
 use Symfony\Component\Console\Application;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
+/**
+ * Class ConsoleHelper
+ * Startup for console commands without service wiring.
+ */
 class ConsoleHelper
 {
     /**
@@ -21,18 +27,32 @@ class ConsoleHelper
      */
     protected $itemManager;
 
-    public function __construct(ItemManager $itemManager)
-    {
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
+
+    /**
+     * Initialize instance.
+     *
+     * @param ItemManager $itemManager Dynamodb entity manager.
+     * @param LoggerInterface $logger For writing log entries.
+     */
+    public function __construct(
+        ItemManager $itemManager,
+        LoggerInterface $logger = null
+    ) {
         $this->itemManager = $itemManager;
+        $this->logger = $logger ?? new NullLogger();
     }
 
     public function addCommands(Application $application)
     {
         $application->addCommands(
             [
-                (new CreateSchemaCommand())->withItemManager($this->itemManager),
-                (new DropSchemaCommand())->withItemManager($this->itemManager),
-                (new UpdateSchemaCommand())->withItemManager($this->itemManager),
+                new CreateSchemaCommand($this->itemManager, $this->logger),
+                new DropSchemaCommand($this->itemManager, $this->logger),
+                new UpdateSchemaCommand($this->itemManager, $this->logger),
             ]
         );
     }

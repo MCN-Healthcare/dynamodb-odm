@@ -37,9 +37,3 @@ $user->name = 'John';
 $user->ver  = '1';
 $im->persist($user);
 $im->flush();
-
-//$user = $im->get(CasDemoUser::class, ['id' => 1]);
-//$user->name = 'Alice';
-//$user->ver = '2';
-////sleep(5);
-//$im->flush();

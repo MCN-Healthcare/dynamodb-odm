@@ -8,15 +8,21 @@
 
 namespace McnHealthcare\ODM\Dynamodb\Console\Commands;
 
-use McnHealthcarAwsWrappers\DynamoDbManager;
+use McnHealthcare\ODM\Dynamodb\Helpers\DynamoDbManager;
 use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * Class CreateSchemaCommand
+ * Console command to create dynamodb schema.
+ */
 class CreateSchemaCommand extends AbstractSchemaCommand
 {
-
+    /**
+     * {@inheritdoc}
+     */
     protected function configure()
     {
         parent::configure();
@@ -32,12 +38,15 @@ class CreateSchemaCommand extends AbstractSchemaCommand
              );
     }
 
+    /**
+     * {@inheritdoc}
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $skipExisting = $input->getOption('skip-existing-table');
         $dryRun = $input->getOption('dry-run');
         $im = $this->getItemManager();
-        $dynamoManager = new DynamoDbManager($this->getItemManager()->getDynamodbConfig());
+        $dynamoManager = new DynamoDbManager($this->getItemManager()->getDynamoDbClient());
 
         $classes = $this->getManagedItemClasses();
         foreach ($classes as $class => $reflection) {
@@ -53,7 +62,12 @@ class CreateSchemaCommand extends AbstractSchemaCommand
         foreach ($classes as $class => $reflection) {
             $itemDef = $reflection->getItemDefinition();
             if ($itemDef->projected) {
-                \mnotice("Class %s is projected class, will not create table.", $class);
+                $output->writeln(
+                    "Will not create projected table <info>$class</info>"
+                );
+                $this->logger->notice(
+                    sprintf("Class %s is projected class, will not create table.", $class)
+                );
                 continue;
             }
 
