@@ -112,7 +112,7 @@ class ManagedItemState
      *
      * @param int $timestampOffset UTC offset in seconds.
      */
-    public function updateCASTimestamps($timestampOffset = 0): void
+    public function updateCASTimestamps(int $timestampOffset = 0): void
     {
         $now = time() + $timestampOffset;
         foreach ($this->itemReflection->getCasProperties() as $propertyName => $casType) {
@@ -153,7 +153,7 @@ class ManagedItemState
      *
      * @param object $item New item object.
      */
-    public function setItem($item): void
+    public function setItem(object $item): void
     {
         $this->item = $item;
     }

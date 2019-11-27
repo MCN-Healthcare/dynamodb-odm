@@ -233,7 +233,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function refresh(object $item, $persistIfNotManaged = false): void
+    public function refresh(object $item, bool $persistIfNotManaged = false): void
     {
         $this->getRepository(get_class($item))->refresh($item, $persistIfNotManaged);
     }

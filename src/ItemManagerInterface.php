@@ -103,7 +103,7 @@ interface ItemManagerInterface
      * @param object $item Item to refresh.
      * @param bool $persistIfNotManaged Flags create if not found.
      */
-    public function refresh(object $item, $persistIfNotManaged = false): void;
+    public function refresh(object $item, bool $persistIfNotManaged = false): void;
 
     /**
      * Flags delete item from database next flush.

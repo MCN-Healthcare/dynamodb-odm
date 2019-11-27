@@ -128,18 +128,18 @@ interface ItemRepositoryInterface
     ): void;
 
     /**
-     * Makes item a managed item.
+     * Makes an item a managed item.
      *
-     * @param $obj
+     * @param object $obj
      */
-    public function persist($obj): void;
+    public function persist(object $obj): void;
 
     /**
      * Persist for the Activity Logger
      *
      * @param $obj
      */
-    public function persistLoggable($obj): void;
+    public function persistLoggable(object $obj): void;
 
     /**
      * Performs a query.
@@ -240,7 +240,7 @@ interface ItemRepositoryInterface
      *
      * @param $obj
      */
-    public function remove($obj): void;
+    public function remove(object $obj): void;
 
     /**
      * Remove all items.

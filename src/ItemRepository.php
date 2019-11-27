@@ -512,7 +512,7 @@ class ItemRepository implements ItemRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function persist($obj): void
+    public function persist(object $obj): void
     {
         if ( ! $this->itemReflection->getReflectionClass()->isInstance($obj)) {
             throw new ODMException(
@@ -535,7 +535,7 @@ class ItemRepository implements ItemRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function persistLoggable($obj): void
+    public function persistLoggable(object $obj): void
     {
         if ( ! $this->logItemReflection->getReflectionClass()->isInstance($obj)) {
             throw new ODMException(
@@ -699,7 +699,7 @@ class ItemRepository implements ItemRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function remove($obj): void
+    public function remove(object $obj): void
     {
         if (! $this->itemReflection->getReflectionClass()->isInstance($obj)) {
             throw new ODMException(
