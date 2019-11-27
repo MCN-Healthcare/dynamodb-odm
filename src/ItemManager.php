@@ -114,7 +114,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function addNamespace(string $namespace, string $srcDir)
+    public function addNamespace(string $namespace, string $srcDir): void
     {
         if (! \is_dir($srcDir)) {
             $this->logger->warning(
@@ -141,7 +141,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function addReservedAttributeNames(...$args)
+    public function addReservedAttributeNames(...$args): void
     {
         foreach ($args as $arg) {
             $this->reservedAttributeNames[] = $arg;
@@ -151,7 +151,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function clear()
+    public function clear(): void
     {
         foreach ($this->repositories as $itemRepository) {
             $itemRepository->clear();
@@ -161,7 +161,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function detach(object $item)
+    public function detach(object $item): void
     {
         if (! is_object($item)) {
             throw new ODMException("You can only detach a managed object!");
@@ -172,7 +172,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function flush()
+    public function flush(): void
     {
         foreach ($this->repositories as $repository) {
             $repository->flush();
@@ -205,7 +205,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function setSkipCheckAndSet(bool $skipCheckAndSet)
+    public function setSkipCheckAndSet(bool $skipCheckAndSet): void
     {
         $this->skipCheckAndSet = $skipCheckAndSet;
     }
@@ -217,15 +217,15 @@ class ItemManager implements ItemManagerInterface
     {
         if (class_exists($className)) {
             return true;
-        } else {
-            return false;
         }
+
+        return false;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function persist(object $item)
+    public function persist(object $item): void
     {
         $this->getRepository(get_class($item))->persist($item);
     }
@@ -233,7 +233,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function refresh(object $item, $persistIfNotManaged = false)
+    public function refresh(object $item, bool $persistIfNotManaged = false): void
     {
         $this->getRepository(get_class($item))->refresh($item, $persistIfNotManaged);
     }
@@ -241,7 +241,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function remove(object $item)
+    public function remove(object $item): void
     {
         $this->getRepository(get_class($item))->remove($item);
     }
@@ -338,7 +338,7 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function setReservedAttributeNames(array $reservedAttributeNames)
+    public function setReservedAttributeNames(array $reservedAttributeNames): void
     {
         $this->reservedAttributeNames = $reservedAttributeNames;
     }

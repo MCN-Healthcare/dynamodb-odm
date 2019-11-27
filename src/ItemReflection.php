@@ -131,7 +131,7 @@ class ItemReflection implements ItemReflectionInterface
      *
      * @param object $obj Item object to veriffy.
      */
-    protected function verifyObjectType(object $obj)
+    protected function verifyObjectType(object $obj): void
     {
         if (! is_a($obj, $this->itemClass)) {
             throw new ODMException(
@@ -197,7 +197,7 @@ class ItemReflection implements ItemReflectionInterface
     /**
      * {@inheritdoc}
      */
-    public function parse(Reader $reader)
+    public function parse(Reader $reader): void
     {
         $this->reader = $reader;
 
@@ -270,7 +270,7 @@ class ItemReflection implements ItemReflectionInterface
      * @param object $obj Item object to virify.
      * @param string $property Name of property to verify.
      */
-    protected function verifyObjectHasProperty(object $obj, string $property)
+    protected function verifyObjectHasProperty(object $obj, string $property): void
     {
         $this->verifyObjectType($obj);
         if (! isset($this->reflectionProperties[$property])) {
@@ -302,7 +302,7 @@ class ItemReflection implements ItemReflectionInterface
     /**
      * {@inheritdoc}
      */
-    public function updateProperty(object $obj, string $propertyName, $value)
+    public function updateProperty(object $obj, string $propertyName, $value): void
     {
         $this->verifyObjectHasProperty($obj, $propertyName);
         $relfectionProperty = $this->reflectionProperties[$propertyName];
