@@ -378,10 +378,16 @@ class Query implements QueryInterface
             $this->itemClass
         );
         $indexes = $itemReflection->getItemIndexes();
-        return array_merge(
-            [$indexes['primary']],
-            $indexes['gsi'],
-            $indexes['lsi']
-        );
+        $primary = [$indexes['primary']];
+        $gsi = [];
+        if (isset($indexes['gsi'])) {
+            $gsi = $indexes['gsi'];
+        }
+        $lsi = [];
+        if (isset($indexes['lsi'])) {
+            $lsi = $indexes['lsi'];
+        }
+
+        return array_merge($primary, $gsi, $lsi);
     }
 }
