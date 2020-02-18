@@ -468,7 +468,7 @@ class ItemReflection implements ItemReflectionInterface
 
         return [
             'primary' => $definition->primaryIndex,
-            'gci' => $definition->globalSecondaryIndices,
+            'gsi' => $definition->globalSecondaryIndices,
             'lsi' => $definition->localSecondaryIndices
         ];
     }
