@@ -6,9 +6,7 @@
         {
             "type": "vcs",
             "url": "https://github.com/MCN-Healthcare/dynamodb-odm"
-        }
-    ],
-    "repositories-dev" : [
+        },
         {
             "type" : "vcs",
             "url" : "https://github.com/mcn-fredw/mock-from-yaml-php"
