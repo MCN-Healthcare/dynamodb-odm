@@ -23,8 +23,8 @@
     "require-dev" : {
         "liip/functional-test-bundle": ">=3.0.0",
         "phpunit/phpunit": ">=8",
-        "symfony/phpunit-bridge": ">=4.3",
-        "symfony/yaml": ">=4.3",
+        "symfony/phpunit-bridge": ">=5.1",
+        "symfony/yaml": ">=5.1",
         "mockfromyaml/mockfromyaml" : ">=2.0.1"
     },
     "license"     : "MIT",
