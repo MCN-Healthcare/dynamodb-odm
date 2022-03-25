@@ -73,7 +73,9 @@ $itemSrcDir    = __DIR__ . "/ut"; // in practice, this usually points to src/Ite
 
 $im = new ItemManager(
     $client,
-    $tablePrefix
+    $tablePrefix,
+    $reader,
+    $logger
 );
 $im->addNamespace(
     $itemNamespace,
@@ -86,8 +88,10 @@ The explanation of each argument can be found below:
 
 argument        | description                   | default value
 ---             | ---                           | ---
-dynamoDbClient       | AWS DynamoDb Client    | **mandatory**
+dynamoDbClient  | AWS DynamoDb Client           | **mandatory**
 tablePrefix     | a prefix to table names       | **mandatory**
+reader          | doctrine annotation reader    | **optional** Defaults to psr cache reader.
+logger          | psr logger                    | **optional** Defaults to null logger.
 itemSrcDir      | a source directory under which Item classes can be found | **mandatory**
 itemNamespace   | the base namespace for the managed Item classes source directory  | **mandatory**
 
