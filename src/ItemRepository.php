@@ -98,6 +98,12 @@ class ItemRepository implements ItemRepositoryInterface
     protected $query;
 
     /**
+     * Flags repository has at least 1 item that needs flushed.
+     * @var bool
+     */
+    protected $hasQueue = false;
+    
+    /**
      * ItemRepository constructor.
      *
      * @param ItemReflectionInterface $itemReflection Item metadata.
@@ -235,6 +241,7 @@ class ItemRepository implements ItemRepositoryInterface
         $removed = [];
         $batchRemovalKeys = [];
         $batchSetItems = [];
+        $this->hasQueue = false;
         $batchNewItemStates = new \SplStack();
         $batchUpdateItemStates = new \SplStack();
 
@@ -909,7 +916,6 @@ class ItemRepository implements ItemRepositoryInterface
         );
 
         return $log->insertIntoActivityLog($dataObj);
-
     }
 
     /**
@@ -987,5 +993,22 @@ class ItemRepository implements ItemRepositoryInterface
     public function getQueryBuilder(): QueryInterface
     {
         return clone $this->query;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function enqueueItem(object $item): void
+    {
+        $this->persist($item);
+        $this->hasQueue = true;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function hasQueue(): bool
+    {
+        return $this->hasQueue;
     }
 }

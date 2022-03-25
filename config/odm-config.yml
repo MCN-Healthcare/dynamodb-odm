@@ -1,0 +1,23 @@
+odm:
+    # Dynamo DB client
+    awsClient:
+        class : 'Aws\DynamoDb\DynamoDbClient'
+        arguments:
+            - region: 'us-west-2'
+              version: 'latest'
+              endpoint: 'http://localhost:8000'
+    # Item manager
+    itemManager:
+        class: 'McnHealthcare\ODM\Dynamodb\ItemManager'
+        arguments:
+            - '@awsClient'
+            - 'odm-ut-'
+        calls:
+            - method: addNamespace
+              arguments:
+                  - 'McnHealthcare\ODM\Dynamodb\Ut'
+                  - '../ut'
+            - method: addNamespace
+              arguments:
+                  - 'McnHealthcare\ODM\Dynamodb\Entity'
+                  - 'Entity'

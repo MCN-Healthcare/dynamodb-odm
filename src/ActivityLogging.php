@@ -1,6 +1,6 @@
 <?php
 /*
- * This file is part AWS DynamoDB ODM.
+ * This file is part of AWS DynamoDB ODM.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -8,7 +8,6 @@
 namespace McnHealthcare\ODM\Dynamodb;
 
 use McnHealthcare\ODM\Dynamodb\Entity\ActivityLog;
-use Doctrine\Common\Annotations\AnnotationReader;
 
 /**
  * Class ActivityLogging
@@ -32,7 +31,7 @@ class ActivityLogging
     private $itemReflection;
 
     /**
-     * Item reflection for table being logged.
+     * Item manager for table being logged.
      *
      * @var ItemManagerInterface
      */
@@ -81,13 +80,6 @@ class ActivityLogging
     private $logItemManager;
 
     /**
-     * For parsing annotations in the log table.
-     *
-     * @var AnnotationReader
-     */
-    private $reader;
-
-    /**
      * ActivityLogging constructor.
      *
      * @param ItemReflection $itemReflection
@@ -111,17 +103,11 @@ class ActivityLogging
         $this->changedBy = $changedBy;
         $this->offset = $offset;
 
-        $this->logItemManager = new ItemManager(
-            $this->itemManager->getDynamoDbClient(),
-            $this->itemManager->getDefaultTablePrefix(),
-            $this->itemManager->getCacheDir(),
-            $this->itemManager->isDev()
-        );
+        $this->logItemManager = clone $itemManager;
+
         $this->logItemReflection = new ItemReflection(ActivityLog::class);
 
-        $this->reader = $this->logItemManager->getReader();
-
-        $this->logItemReflection->parse($this->reader);
+        $this->logItemReflection->parse($this->logItemManager->getReader());
 
     }
 
@@ -132,11 +118,7 @@ class ActivityLogging
      */
     private function getItemRepository(): ItemRepositoryInterface
     {
-        return new ItemRepository(
-            $this->itemReflection,
-            $this->itemManager,
-            $this->getActivityLoggingDetails()
-        );
+        return $this->itemManager->getRepository($this->itemReflection->getItemClass());
     }
 
     /**
@@ -146,13 +128,7 @@ class ActivityLogging
      */
     private function getLogRepository(): ItemRepositoryInterface
     {
-        $logRepository = new ItemRepository(
-            $this->logItemReflection,
-            $this->logItemManager,
-            $this->getActivityLoggingDetails()
-        );
-
-        return $logRepository;
+        return $this->logItemManager->getRepository($this->logItemReflection->getItemClass());
     }
 
     /**
@@ -213,8 +189,7 @@ class ActivityLogging
         $logObject = $this->createLogObject($now, $cleanPreviousObject, $cleanDataObj);
 
         // write the object to the activity log table
-        $this->logItemManager->persist($logObject);
-        $this->logItemManager->flush();
+        $this->logItemManager->enqueueItem($logObject);
 
         return true;
     }
@@ -232,8 +207,14 @@ class ActivityLogging
         $clean_array = [];
 
         foreach ($array as $key => $value) {
-            $clean_key = preg_replace('/[[:cntrl:]]/', '', $key);
-            $clean_value = preg_replace('/[[:cntrl:]]/', '', $value);
+            $clean_key = $key;
+            if (is_string($key) && is_string($value)) {
+                $clean_key = preg_replace('/[[:cntrl:]]/', '', $key);
+            }
+            $clean_value = $value;
+            if (is_string($value)) {
+                $clean_value = preg_replace('/[[:cntrl:]]/', '', $value);
+            }
             $clean_array[$clean_key] = $clean_value;
         }
 
@@ -251,7 +232,7 @@ class ActivityLogging
      */
     private function createLogObject(int $now, $previousObject, $dataObj): ActivityLog
     {
-        $id = $id = (microtime(true) * 10000);
+        $id = (int)(microtime(true) * 10000);
 
         $logObject = new ActivityLog();
         $logObject->setId($id);

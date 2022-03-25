@@ -386,4 +386,16 @@ interface ItemRepositoryInterface
      * @return QueryInterface
      */
     public function getQueryBuilder(): QueryInterface;
+
+    /**
+     * Enqueues items during flush phase.
+     *
+     * @param object $item Item to queue.
+     */
+    public function enqueueItem(object $item): void;
+
+    /**
+     * Checks repository has items that need flushed.
+     */
+    public function hasQueue(): bool;
 }

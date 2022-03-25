@@ -1,11 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: minhao
- * Date: 2016-09-08
- * Time: 20:56
- */
-
 namespace McnHealthcare\ODM\Dynamodb\Ut;
 
 use McnHealthcare\ODM\Dynamodb\Helpers\Index;
@@ -14,8 +7,10 @@ use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
 use McnHealthcare\ODM\Dynamodb\ItemManager;
 use McnHealthcare\ODM\Dynamodb\ActivityLogging;
 use McnHealthcare\ODM\Dynamodb\ItemReflection;
-use McnHealthcare\ODM\Dynamodb\Ut\ActivityLog;
+use McnHealthcare\ODM\Dynamodb\Entity\ActivityLog;
+use McnHealthcare\ODM\Dynamodb\config\OdmConfig;
 use PHPUnit\Framework\TestCase;
+use DateTime;
 
 /**
  * Class ItemManagerTest
@@ -30,9 +25,6 @@ class ItemManagerTest extends TestCase
 
     /** @var ItemReflection */
     protected $itemReflector;
-
-    /** @var ActivityLogging */
-    private $activityLogging;
 
     private $activityLogReflector;
 
@@ -49,29 +41,34 @@ class ItemManagerTest extends TestCase
         ini_set('xdebug.var_display_max_children', '256');
         ini_set('xdebug.var_display_max_data', '1024');
 
-        $this->itemManager  = new ItemManager(
-            UTConfig::$dynamodb,
-            UTConfig::$tablePrefix, __DIR__ . "/cache",
-            true
-        );
-        $this->itemManager2 = new ItemManager(
-            UTConfig::$dynamodb,
-            UTConfig::$tablePrefix, __DIR__ . "/cache",
-            true
-        );
-
+        echo "cloning item manager 1\n";
+        ob_flush();
+        $this->itemManager = clone OdmConfig::get('itemManager');
+        echo "cloning item manager 2\n";
+        ob_flush();
+        $this->itemManager2 = clone OdmConfig::get('itemManager');
+        echo "creating item reflection\n";
+        ob_flush();
         $this->itemReflector = new ItemReflection(User::class);
+        echo "creating activity log reflection\n";
+        ob_flush();
         $this->activityLogReflector = new ItemReflection(ActivityLog::class);
     }
     
     public function testPersistAndGet()
     {
-        $id   = mt_rand(1000, PHP_INT_MAX);
+        $id = mt_rand(1000, PHP_INT_MAX);
         $user = new User();
         $user->setId($id);
         $user->setName('Alice');
+        echo "calling persist\n";
+        ob_flush();
         $this->itemManager->persist($user);
+        echo "calling flush\n";
+        ob_flush();
         $this->itemManager->flush();
+        echo "flush called\n";
+        ob_flush();
 
         /** @var User $user2 */
         $user2 = $this->itemManager->get(User::class, ['id' => $id]);
@@ -665,22 +662,23 @@ class ItemManagerTest extends TestCase
      */
     public function testCanLogActivity()
     {
-        $id = (string)(microtime(true) * 10000);
+        $id = (string)((int)(microtime(true) * 10000));
 
+        $dt = new DateTime();
         $activityLog = new ActivityLog();
         $activityLog->setLoggedTable('TestTable');
         $activityLog->setId($id);
-        $activityLog->setChangedDateTime(time());
+        $activityLog->setChangedDateTime($dt->getTimestamp());
         $activityLog->setPreviousValues(
             [
                 "previous_value" => "Some test previous value",
-                "now" => strftime("%Y/%m/%d @ %H:%M:%S")
+                "now" => $dt->format("Y/m/d @ H:i:S")
             ]
         );
         $activityLog->setChangedToValues(
             [
                 "changed_value" => "Some test changed to value",
-                "now" => strftime("%Y/%m/%d @ %H:%M:%S")
+                "now" => $dt->format("Y/m/d @ H:i:S")
             ]
         );
         $activityLog->setChangedBy("TestChangedBy" . $id);
