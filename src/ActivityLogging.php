@@ -103,12 +103,9 @@ class ActivityLogging
         $this->changedBy = $changedBy;
         $this->offset = $offset;
 
-        $this->logItemManager = clone $itemManager;
+        $this->logItemManager = $itemManager;
 
-        $this->logItemReflection = new ItemReflection(ActivityLog::class);
-
-        $this->logItemReflection->parse($this->logItemManager->getReader());
-
+        $this->logItemReflection = $itemManager->getItemReflection(ActivityLog::class);
     }
 
     /**

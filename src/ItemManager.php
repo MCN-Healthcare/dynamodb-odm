@@ -350,7 +350,8 @@ class ItemManager implements ItemManagerInterface
      */
     public function checkLoggable($entity): bool
     {
-        $refClass = new ReflectionClass($entity);
+        $ref = $this->getItemReflection(get_class($entity));
+        $refClass = $ref->getReflectionClass();
 
         $classAnnotations = $this->reader->getClassAnnotations($refClass);
 
