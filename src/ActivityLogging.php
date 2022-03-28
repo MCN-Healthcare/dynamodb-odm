@@ -229,7 +229,8 @@ class ActivityLogging
      */
     private function createLogObject(int $now, $previousObject, $dataObj): ActivityLog
     {
-        $id = (int)(microtime(true) * 10000);
+        usleep(100000);
+        $id = (int)(microtime(true) * 100000);
 
         $logObject = new ActivityLog();
         $logObject->setId($id);

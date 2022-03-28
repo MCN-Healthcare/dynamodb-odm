@@ -662,7 +662,7 @@ class ItemManagerTest extends TestCase
      */
     public function testCanLogActivity()
     {
-        $id = (string)((int)(microtime(true) * 10000));
+        $id = (string)((int)(microtime(true) * 100000));
 
         $dt = new DateTime();
         $activityLog = new ActivityLog();
@@ -696,7 +696,7 @@ class ItemManagerTest extends TestCase
      */
     public function testLoggableIsEnabledOnUser()
     {
-        $random_var   = (microtime(true) * 10000);
+        $random_var   = (microtime(true) * 100000);
         $id = 0;
         $user = new User();
         $user->setId($id);
