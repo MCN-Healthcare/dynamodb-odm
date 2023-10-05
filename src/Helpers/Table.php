@@ -179,7 +179,7 @@ class Table
         }
         call_user_func($flushCallback, 1);
 
-        \GuzzleHttp\Promise\each_limit(
+        \GuzzleHttp\Promise\Each::ofLimit(
             $promises,
             $concurrency,
             function (Result $result) use (&$unprocessed, &$returnSet) {
@@ -1109,7 +1109,7 @@ class Table
         }
         call_user_func($flushCallback, 1);
 
-        \GuzzleHttp\Promise\each_limit(
+        \GuzzleHttp\Promise\Each::ofLimit(
             $promises,
             $concurrency,
             function (Result $result) use ($isPut, &$unprocessed) {
