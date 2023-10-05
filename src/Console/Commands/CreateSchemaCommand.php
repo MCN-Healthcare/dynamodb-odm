@@ -115,6 +115,8 @@ class CreateSchemaCommand extends AbstractSchemaCommand
             \GuzzleHttp\Promise\all($waits)->wait();
             $output->writeln("Done.");
         }
+
+        return static::SUCCESS;
     }
 
 }

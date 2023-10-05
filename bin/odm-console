@@ -1,0 +1,20 @@
+#!/usr/bin/env php
+
+<?php
+
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Input\ArgvInput;
+use McnHealthcare\ODM\Dynamodb\Console\ConsoleHelper;
+use McnHealthcare\ODM\Dynamodb\config\OdmConfig;
+
+set_time_limit(0);
+
+require_once __DIR__ . "/../vendor/autoload.php";
+
+OdmConfig::load();
+
+$consoleHelper = new ConsoleHelper(OdmConfig::get('itemManager'));
+
+$consoleApplication = new Application();
+$consoleHelper->addCommands($consoleApplication);
+$consoleApplication->run(new ArgvInput());

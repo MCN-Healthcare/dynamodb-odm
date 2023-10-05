@@ -118,12 +118,12 @@ class Index
             return $this->name;
         }
         else {
-            $result     = $this->hashKey . "-" . $this->rangeKey . "-index";
-            $result     = preg_replace('/(?!^)([A-Z])([a-z0-9])/', '_$1$2', $result);
-            $result     = preg_replace('/([a-z0-9])([A-Z])/', '$1_$2', $result);
-            $result     = preg_replace('/_+/', '_', $result);
-            $result     = trim($result, "_");
-            $result     = strtolower($result);
+            $result = $this->hashKey . "-" . $this->rangeKey . "-index";
+            $result = preg_replace('/(?!^)([A-Z])([a-z0-9])/', '_$1$2', $result);
+            $result = preg_replace('/([a-z0-9])([A-Z])/', '$1_$2', $result);
+            $result = preg_replace('/_+/', '_', $result);
+            $result = trim($result, "_");
+            $result = strtolower($result);
             $this->name = $result;
 
             return $this->name;

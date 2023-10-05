@@ -345,7 +345,7 @@ class Table
                 $projectedFields[$idx]   = $escaped = '#' . $field;
                 $fieldsMapping[$escaped] = $field;
             }
-            $requestArgs['ProjectionExpression']     = \implode($projectedFields, ', ');
+            $requestArgs['ProjectionExpression']     = \implode(', ', $projectedFields);
             $requestArgs['ExpressionAttributeNames'] = $fieldsMapping;
         }
         if ($is_consistent_read) {

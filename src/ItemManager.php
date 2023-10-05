@@ -5,12 +5,12 @@ use Aws\DynamoDb\DynamoDbClient;
 use Aws\AwsClientInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\Reader;
+use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Annotations\PsrCachedReader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
-use Doctrine\Common\Annotations\CachedReader;
-use Doctrine\Common\Cache\FilesystemCache;
 use McnHealthcare\ODM\Dynamodb\Exceptions\ODMException;
+use Symfony\Component\Cache\Adapter\ApcuAdapter;
 use Symfony\Component\Finder\Finder;
 use McnHealthcare\ODM\Dynamodb\Annotations\ActivityLogging;
 use ReflectionClass;
@@ -66,16 +66,6 @@ class ItemManager implements ItemManagerInterface
     protected $skipCheckAndSet = false;
 
     /**
-     * @var string
-     */
-    private $cacheDir;
-
-    /**
-     * @var bool
-     */
-    private $isDev;
-
-    /**
      * @var LoggerInterface
      */
     protected $logger;
@@ -85,30 +75,30 @@ class ItemManager implements ItemManagerInterface
      *
      * @param AwsClientInterface $dynamoDbClient Client for aws dynamodb api.
      * @param string $defaultTablePrefix Default prefix for table names.
-     * @param string $cacheDir Path for directory to cache metadata.
-     * @param bool $isDev Flags development environment.
+     * @param Reader $reader Annotation reader.
      * @param LoggerInterface $logger For writing log entries.
      */
     public function __construct(
         AwsClientInterface $dynamoDbClient,
         string $defaultTablePrefix,
-        string $cacheDir,
-        bool $isDev = true,
+        Reader $reader = null,
         LoggerInterface $logger = null
     ) {
         $this->dynamoDbClient = $dynamoDbClient;
         $this->defaultTablePrefix = $defaultTablePrefix;
-        $this->cacheDir = $cacheDir;
-        $this->isDev = $isDev;
+
         $this->logger = $logger ?? new NullLogger();
 
         AnnotationRegistry::registerLoader([$this, 'loadAnnotationClass']);
 
-        $this->reader = new CachedReader(
-            new AnnotationReader(),
-            new FilesystemCache($cacheDir),
-            $isDev
-        );
+        if (is_null($reader)) {
+            $reader = new PsrCachedReader(
+                new AnnotationReader(),
+                new ApcuAdapter('mcnodm'),
+                false
+            );
+        }
+        $this->reader = $reader;
     }
 
     /**
@@ -116,7 +106,11 @@ class ItemManager implements ItemManagerInterface
      */
     public function addNamespace(string $namespace, string $srcDir): void
     {
-        if (! \is_dir($srcDir)) {
+        if ('/' !== substr($srcDir, 0, 1)) {
+            /* allow relative source directory */
+            $srcDir = __DIR__ . '/' . $srcDir;
+        }
+        if (! is_dir($srcDir)) {
             $this->logger->warning(
                 sprintf("Directory %s doesn't exist.", $srcDir)
             );
@@ -133,8 +127,10 @@ class ItemManager implements ItemManagerInterface
                 str_replace("/", "\\", $splFileInfo->getRelativePath()),
                 $splFileInfo->getBasename(".php")
             );
-            $classname = preg_replace('#\\\\+#', '\\', $classname);
-            $this->possibleItemClasses[] = $classname;
+            if (is_string($classname)) {
+                $classname = preg_replace('#\\\\+#', '\\', $classname);
+                $this->possibleItemClasses[] = $classname;
+            }
         }
     }
 
@@ -177,6 +173,12 @@ class ItemManager implements ItemManagerInterface
         foreach ($this->repositories as $repository) {
             $repository->flush();
         }
+        foreach ($this->repositories as $repository) {
+            if ($repository->hasQueue()) {
+                $repository->flush();
+            }
+        }
+        
     }
 
     /**
@@ -348,10 +350,15 @@ class ItemManager implements ItemManagerInterface
      */
     public function checkLoggable($entity): bool
     {
-        $refClass = new ReflectionClass($entity);
-        $reader = new AnnotationReader();
+        $ref = null;
+        if (is_string($entity)) {
+            $ref = $this->getItemReflection($entity);
+        } else {
+            $ref = $this->getItemReflection(get_class($entity));
+        }
+        $refClass = $ref->getReflectionClass();
 
-        $classAnnotations = $reader->getClassAnnotations($refClass);
+        $classAnnotations = $this->reader->getClassAnnotations($refClass);
 
         $i = 0;
         foreach ($classAnnotations as $annot) {
@@ -367,16 +374,8 @@ class ItemManager implements ItemManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function getCacheDir(): string
+    public function enqueueItem(object $item): void
     {
-        return $this->cacheDir;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function isDev(): bool
-    {
-        return $this->isDev;
+        $this->getRepository(get_class($item))->enqueueItem($item);
     }
 }

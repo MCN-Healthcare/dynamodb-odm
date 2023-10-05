@@ -2,7 +2,6 @@
 namespace McnHealthcare\ODM\Dynamodb;
 
 use Doctrine\Common\Annotations\Reader;
-use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\AnnotationException;
 use Aws\AwsClientInterface;
 use ReflectionException;
@@ -203,16 +202,9 @@ interface ItemManagerInterface
     public function checkLoggable(object $entity): bool;
 
     /**
-     * Gets directory for meta data cache.
+     * Enqueues item during flush phase so that it gets committed at end of flush phase.
      *
-     * @return null|string
+     * @param object $item Log item to queue.
      */
-    public function getCacheDir(): string;
-
-    /**
-     * Gets is dev flag value.
-     *
-     * @return bool
-     */
-    public function isDev(): bool;
+    public function enqueueItem(object $item): void;
 }

@@ -53,7 +53,7 @@ class QueryTest extends TestCase
      *
      * @return array
      */
-    protected function buildDomainWithyIndexes(): array
+    protected function buildDomainWithIndexes(): array
     {
         return [
             'primaryIndex1' => new Index(
@@ -103,7 +103,7 @@ class QueryTest extends TestCase
      */
     public function testExecute(array $fixtures)
     {
-        $domain = $this->buildDomainWithyIndexes();
+        $domain = $this->buildDomainWithIndexes();
         $this->createMockFixtures($fixtures, $domain);
         $constructorArgs = $domain['container']->get('constructor-args');
         $methodArgs = $domain['container']->get('method-args');
@@ -285,7 +285,7 @@ class QueryTest extends TestCase
      */
     public function testPrepare(array $fixtures)
     {
-        $domain = $this->buildDomainWithyIndexes();
+        $domain = $this->buildDomainWithIndexes();
         $this->createMockFixtures($fixtures, $domain);
         $constructorArgs = $domain['container']->get('constructor-args');
         $fromAgs = $domain['container']->get('from-args');

@@ -27,9 +27,7 @@ $client = new \Aws\DynamoDb\DynamoDbClient(
 );
 
 UTConfig::load();
-$im = new ItemManager(
-    $client, UTConfig::$tablePrefix, __DIR__ . "/cache", true
-);
+$im = new ItemManager($client, UTConfig::$tablePrefix);
 
 $user       = new CasDemoUser();
 $user->id   = mt_rand();

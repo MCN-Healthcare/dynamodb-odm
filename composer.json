@@ -13,9 +13,7 @@
         }
     ],
     "require"     : {
-        "php" : ">=7.4.1",
         "doctrine/annotations" : ">=1.6",
-        "doctrine/common" : ">=2.10",
         "symfony/console" : ">=5.1",
         "symfony/finder" : ">=5.1",
         "aws/aws-sdk-php": ">=3.107"
@@ -25,11 +23,13 @@
         "phpunit/phpunit": ">=8",
         "symfony/phpunit-bridge": ">=5.1",
         "symfony/yaml": ">=5.1",
+        "symfony/console": ">=5.4",
         "mockfromyaml/mockfromyaml" : ">=2.0.1"
     },
     "license"     : "MIT",
     "autoload"    : {
         "psr-4": {
+            "McnHealthcare\\ODM\\Dynamodb\\config\\": "config/",
             "McnHealthcare\\ODM\\Dynamodb\\": "src/"
         }
     },
@@ -44,6 +44,6 @@
         }
     },
     "bin"         : [
-        "bin/oasis-dynamodb-odm"
+        "bin/odm-console"
     ]
 }
